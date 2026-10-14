@@ -1,0 +1,50 @@
+name: HistoryLab - APK Android
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Preia sursele
+        uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: SDK Android 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(command -v sdkmanager || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Pregateste OCR local
+        run: bash scripts/fetch_ocr_models.sh
+      - name: Teste deterministe
+        run: |
+          mkdir -p build/engine-tests
+          javac -encoding UTF-8 -d build/engine-tests app/src/main/java/ro/historylab/IndexMatcher.java app/src/main/java/ro/historylab/CitationFormatter.java app/src/main/java/ro/historylab/TimelineOrder.java tests/EngineTest.java tests/TimelineOrderTest.java
+          java -cp build/engine-tests EngineTest
+          java -cp build/engine-tests TimelineOrderTest
+      - name: Construieste APK debug
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Publica APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: HistoryLab-Android-v0.2-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
