@@ -1,0 +1,68 @@
+name: Initializare HistoryLab si APK
+on:
+  push:
+    paths:
+      - 'bootstrap/historylab-source.tar.xz'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  initialize-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Preia depozitul
+        uses: actions/checkout@v4
+
+      - name: Extrage sursele si publica fisierele individuale
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xJf bootstrap/historylab-source.tar.xz
+          rm -rf bootstrap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Import HistoryLab Android v0.1 source"
+            git push
+          fi
+
+      - name: Configureaza Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configureaza Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instaleaza SDK Android 35
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configureaza Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Descarca modele OCR pentru APK offline
+        run: bash scripts/fetch_ocr_models.sh
+
+      - name: Teste pentru regulile deterministe
+        run: |
+          mkdir -p build/engine-tests
+          javac -encoding UTF-8 -d build/engine-tests app/src/main/java/ro/historylab/IndexMatcher.java app/src/main/java/ro/historylab/CitationFormatter.java tests/EngineTest.java
+          java -cp build/engine-tests EngineTest
+
+      - name: Construieste APK de test
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Pune APK la dispozitie pentru descarcare
+        uses: actions/upload-artifact@v4
+        with:
+          name: HistoryLab-android-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
