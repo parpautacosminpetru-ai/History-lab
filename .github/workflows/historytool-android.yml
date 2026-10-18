@@ -75,7 +75,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
-            set -euxo pipefail
+            set -eu
             adb install -r android-test-apk/app-debug.apk
             adb shell am start -W -n ro.historytool.mobile/.MainActivity
             adb forward tcp:8765 tcp:8765
