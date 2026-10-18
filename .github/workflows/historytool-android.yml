@@ -50,3 +50,61 @@ jobs:
           path: historytool-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+  emulator_smoke:
+    name: Launch and index on Android emulator
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: historytool-1.0.1-android-installer
+          path: android-test-apk
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run offline app in emulator and test API
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            set -euxo pipefail
+            adb install -r android-test-apk/app-debug.apk
+            adb shell am start -W -n ro.historytool.mobile/.MainActivity
+            adb forward tcp:8765 tcp:8765
+            success=0
+            for i in $(seq 1 90); do
+              if curl -fsS --max-time 3 http://127.0.0.1:8765/api/health -o /tmp/historytool-health.json; then success=1; break; fi
+              sleep 2
+            done
+            if [ "$success" != 1 ]; then adb logcat -d -s AndroidRuntime:E python.stderr:E | tail -n 200; exit 1; fi
+            cat /tmp/historytool-health.json
+            python -c "import json; assert json.load(open('/tmp/historytool-health.json'))['status']=='ok'"
+            printf 'In anul 1475 Moldova a fost mentionata intr-un document de proba.\\n' >/tmp/historytool-smoke.txt
+            curl -fSs -F 'files=@/tmp/historytool-smoke.txt;type=text/plain' http://127.0.0.1:8765/api/sources/upload -o /tmp/upload.json
+            cat /tmp/upload.json
+            curl -fSs -X POST http://127.0.0.1:8765/api/index/start >/tmp/index.json
+            for i in $(seq 1 50); do
+              curl -fsS http://127.0.0.1:8765/api/index/progress -o /tmp/progress.json
+              if python -c "import json; import sys; sys.exit(json.load(open('/tmp/progress.json'))['job']['status']!='running')"; then break; fi
+              sleep 1
+            done
+            python -c "import json; d=json.load(open('/tmp/progress.json')); print(d); assert d['job']['status']=='done'"
+            curl -fSsG --data-urlencode 'q=Moldova' http://127.0.0.1:8765/api/query -o /tmp/search.json
+            python -c "import json; d=json.load(open('/tmp/search.json')); print(d.get('total'), 'hits'); assert d.get('total',0)>0"
+            adb shell screencap -p /sdcard/historytool-proof.png
+            adb pull /sdcard/historytool-proof.png historytool-emulator.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: historytool-android-emulator-proof
+          path: historytool-emulator.png
+          if-no-files-found: ignore
+          retention-days: 14
