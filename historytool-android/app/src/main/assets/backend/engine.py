@@ -262,24 +262,42 @@ def split_sentences(text):
 
 
 def text_pages(filepath,ext,use_ocr=False):
-    """Mobile PDF/DOCX/text ingestion. Every page retains its real PDF page number.
-
-    PDF text is extracted by pypdf; OCR of image-only PDF pages is not
-    silently invented. Original PDF facsimiles can be viewed on Android.
-    """
+    """Mobile import. Source page indices are preserved; OCR is never passed off as source text."""
     if ext=='.pdf':
         from pypdf import PdfReader
         reader=PdfReader(filepath,strict=False)
         for page_num,page in enumerate(reader.pages,1):
-            warn=''
+            issue='';ocr_used=0
             try:
                 raw=page.extract_text(extraction_mode='layout') or ''
             except Exception as ex:
-                raw='';warn='Extragere PDF nereușită: '+str(ex)[:180]
-            out=[(sentence,None) for sentence in split_sentences(raw) if sentence.strip()]
-            if not out:
-                warn='Pagină PDF fără text selectabil; este necesar OCR ori transcriere verificată.'
-            yield page_num,out,warn
+                raw='';issue='Extragere PDF nereușită: '+str(ex)[:150]
+            if len(raw.strip())<12 and use_ocr:
+                try:
+                    from java import jclass
+                    detected=str(jclass('ro.historytool.mobile.OfflineOcr').recognizePdfPage(str(filepath),page_num-1))
+                    if detected.strip():
+                        raw=detected;ocr_used=1
+                        issue='OCR automat local, NECONFIRMAT; verifică textul în imaginea originală.'
+                    else: issue='OCR nu a recunoscut textul; pagina nu este indexată.'
+                except Exception as ex:
+                    issue='OCR indisponibil/eroare: '+str(ex)[:160]
+            out=[(sentence,None,ocr_used) for sentence in split_sentences(raw) if sentence.strip()]
+            if not out and not issue:
+                issue='Pagină PDF fără text selectabil; activează OCR pentru scanări.'
+            yield page_num,out,issue
+    elif ext in ('.jpg','.jpeg','.png'):
+        raw='';issue='Imagine fără OCR; activează OCR pentru scanări.';ocr_used=0
+        if use_ocr:
+            try:
+                from java import jclass
+                raw=str(jclass('ro.historytool.mobile.OfflineOcr').recognizeImage(str(filepath)))
+                issue=('OCR automat local, NECONFIRMAT; verifică textul în imaginea originală.'
+                       if raw.strip() else 'Nu s-a recunoscut text în imagine.')
+                ocr_used=1 if raw.strip() else 0
+            except Exception as ex:
+                issue='OCR indisponibil/eroare: '+str(ex)[:160]
+        yield 1,[(sentence,None,ocr_used) for sentence in split_sentences(raw) if sentence.strip()],issue
     elif ext=='.docx':
         from zipfile import ZipFile
         from xml.etree import ElementTree as ET

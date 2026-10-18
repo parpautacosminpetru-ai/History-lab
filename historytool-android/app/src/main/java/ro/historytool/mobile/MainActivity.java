@@ -198,7 +198,7 @@ public final class MainActivity extends Activity {
                 Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("*/*");
-                intent.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","text/plain","text/markdown","application/octet-stream"});
+                intent.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","text/plain","text/markdown","application/octet-stream","image/png","image/jpeg"});
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
                 try { startActivityForResult(intent, SELECT_FILES);return true; }
                 catch (ActivityNotFoundException e) {fileCallback=null;callback.onReceiveValue(null);notifyUser("Selectorul de fișiere nu este disponibil");return false;}

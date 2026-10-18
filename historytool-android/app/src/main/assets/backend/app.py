@@ -26,7 +26,7 @@ DB=DATA/'atlas.sqlite3'
 app=FastAPI(title='historytool – stație locală de cercetare',version='1.0.1',docs_url='/api/docs',openapi_url='/api/openapi.json')
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1','localhost','testserver'])
 app.mount('/static',StaticFiles(directory=str(HERE/'static')),name='static')
-SUPPORTED={'.pdf','.txt','.md','.docx'}
+SUPPORTED={'.pdf','.txt','.md','.docx','.png','.jpg','.jpeg'}
 MAX_FILE_SIZE=100*1024*1024
 index_lock=threading.Lock()
 job={'status':'idle','started':None,'finished':None,'result':None,'error':None}
@@ -76,13 +76,13 @@ def state():
                     'entities':db.execute('SELECT COUNT(*) FROM entities WHERE id IN (SELECT entity_id FROM mentions)').fetchone()[0],
                     'mentions':db.execute('SELECT COUNT(*) FROM mentions').fetchone()[0],
                     'lexemes':db.execute('SELECT COUNT(*) FROM lexemes').fetchone()[0],
-                    'pending':db.execute('SELECT COUNT(*) FROM sources WHERE status="pending"').fetchone()[0]
+                    'pending':db.execute('SELECT COUNT(*) FROM sources WHERE status IN ("pending","needs_ocr")').fetchone()[0]
                 }, 'engine':'Android local: PDF text, DOCX, TXT, MD; dovezi exacte și verificare umană. OCR scanări indisponibil în această ediție.'}
 
 async def put_file(db, upload):
     fname=Path(upload.filename or 'document').name
     ext=Path(fname).suffix.lower()
-    if ext not in SUPPORTED: raise HTTPException(415,f'Format nesuportat: {ext}. Acceptate: PDF, DOCX, TXT, MD.')
+    if ext not in SUPPORTED: raise HTTPException(415,f'Format nesuportat: {ext}. Acceptate: PDF, DOCX, TXT, MD, PNG, JPG.')
     content=await upload.read(MAX_FILE_SIZE+1)
     if len(content)>MAX_FILE_SIZE:raise HTTPException(413,'Document prea mare pentru încărcare (maxim 100 MB).')
     if not content:raise HTTPException(422,'Fișier gol.')
@@ -137,7 +137,7 @@ async def add_demo():
 @app.post('/api/index/run')
 def index_sources(ocr:bool=False):
     with database() as db:
-        pending=db.execute('SELECT * FROM sources WHERE status IN ("pending","error") ORDER BY id').fetchall()
+        pending=db.execute('SELECT * FROM sources WHERE status IN ("pending","error","needs_ocr") ORDER BY id').fetchall()
         results=[]
         for row in pending:
             src=dict(row)
@@ -147,7 +147,7 @@ def index_sources(ocr:bool=False):
                 pages,parts,issues=engine.create_passages(db,src['id'],src['file_path'],src['format'],use_ocr=ocr)
                 warn=('Probleme sau notificări la '+str(len(issues))+' pagini: '+ '; '.join(issues[:12]) if issues else '')
                 db.execute('UPDATE sources SET status=?,page_count=?,passage_count=?,warning=? WHERE id=?',
-                           ('indexed',pages,parts,warn,src['id']))
+                           ('indexed' if parts else 'needs_ocr',pages,parts,warn,src['id']))
                 audit(db,'source.index',src['id'],f'{pages} pagini; {parts} pasaje; OCR={ocr}')
                 db.commit()
                 results.append({'source':src['title'],'pages':pages,'passages':parts,'status':'indexed','warning':warn})
@@ -333,7 +333,9 @@ def passage_image(id:int):
         row=db.execute('''SELECT p.text,p.page,p.bbox,s.file_path,s.format FROM passages p
             JOIN sources s ON s.id=p.source_id WHERE p.id=?''',(id,)).fetchone()
         if not row:raise HTTPException(404,'Pasaj inexistent.')
-        if row['format']!='.pdf':raise HTTPException(404,'Imaginea originală a paginii este disponibilă pentru PDF.')
+        if row['format'] in ('.png','.jpg','.jpeg'):
+            return FileResponse(Path(row['file_path']),media_type='image/png' if row['format']=='.png' else 'image/jpeg',headers={'Cache-Control':'no-store'})
+        if row['format']!='.pdf':raise HTTPException(404,'Imaginea originală este disponibilă pentru PDF sau imagine.')
         try:
             # Android PdfRenderer displays the untouched facsimile.
             # pypdf has no reliable bounding boxes for an exact highlight, so
@@ -355,7 +357,8 @@ def original_file(id:int):
         path=Path(s['file_path'])
         if not path.exists():raise HTTPException(410,'Fișierul original lipsește.')
         mt={'.pdf':'application/pdf','.txt':'text/plain; charset=utf-8','.md':'text/markdown; charset=utf-8',
-            '.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}
+            '.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg'}
         return FileResponse(path,media_type=mt.get(s['format']),filename=s['filename'],content_disposition_type='inline')
 
 
