@@ -1,0 +1,52 @@
+name: historytool — Android APK
+on:
+  push:
+    branches: [feature/historytool-1.0.1]
+    paths:
+      - 'historytool-android/**'
+      - '.github/workflows/historytool-android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Python 3.11 for Android Python build
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare Android SDK 35
+        run: |
+          set -euxo pipefail
+          SDKMANAGER="$(command -v sdkmanager || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile historytool APK
+        working-directory: historytool-android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK
+        working-directory: historytool-android
+        run: |
+          set -euo pipefail
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+      - name: Publish APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: historytool-1.0.1-android-installer
+          path: historytool-android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
