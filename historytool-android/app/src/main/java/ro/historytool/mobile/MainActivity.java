@@ -38,6 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * historytool: Android frontend for the same *local* document and evidence API
@@ -53,6 +54,7 @@ public final class MainActivity extends Activity {
     private android.webkit.ValueCallback<Uri[]> fileCallback;
     private String downloadPath;
     private String startupError;
+    private volatile boolean destroyed = false;
     private boolean ready = false;
     private long startupTime;
 
@@ -105,13 +107,13 @@ public final class MainActivity extends Activity {
     }
 
     private void pollServer() {
-        if (startupError != null) return;
+        if (destroyed || startupError != null || workers.isShutdown()) return;
         try {
             HttpURLConnection c = (HttpURLConnection)new URL(LOCAL + "/api/health").openConnection();
             c.setConnectTimeout(900); c.setReadTimeout(1100);
             if (c.getResponseCode() == 200) {
                 c.disconnect(); ready = true;
-                ui.post(this::showBrowser);
+                if (!destroyed) ui.post(this::showBrowser);
                 return;
             }
             c.disconnect();
@@ -119,14 +121,21 @@ public final class MainActivity extends Activity {
         if (System.currentTimeMillis()-startupTime > 120000) {
             fail("Motorul local nu a răspuns în 120 secunde. Închide și repornește aplicația.");
         } else {
-            ui.postDelayed(() -> workers.execute(this::pollServer), 650);
+            ui.postDelayed(() -> {
+                if (destroyed || workers.isShutdown()) return;
+                try { workers.execute(this::pollServer); }
+                catch (RejectedExecutionException e) {
+                    Log.w("historytool", "Oprire normală: verificarea serverului a fost anulată");
+                }
+            }, 650);
         }
     }
 
     private void fail(String message) {
+        if (destroyed) return;
         Log.e("historytool",message);
         startupError = message;
-        ui.post(() -> showLoading("historytool nu a putut porni", message));
+        ui.post(() -> { if (!destroyed) showLoading("historytool nu a putut porni", message); });
     }
 
     private void showLoading(String heading, String detail) {
@@ -151,7 +160,7 @@ public final class MainActivity extends Activity {
     }
 
     private void showBrowser() {
-        if (web != null || isFinishing()) return;
+        if (destroyed || web != null || isFinishing() || isDestroyed()) return;
         web = new WebView(this);
         web.setBackgroundColor(Color.WHITE);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -271,6 +280,8 @@ public final class MainActivity extends Activity {
     }
 
     @Override public void onDestroy() {
+        destroyed = true;
+        ui.removeCallbacksAndMessages(null);
         if (web != null) {web.removeJavascriptInterface("HistorytoolMobile");web.destroy();web=null;}
         workers.shutdownNow();super.onDestroy();
     }

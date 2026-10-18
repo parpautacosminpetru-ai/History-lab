@@ -25,7 +25,7 @@ gradle --no-daemon :app:assembleDebug
 
 APK-ul apare în `app/build/outputs/apk/debug/app-debug.apk`.
 
-Motor original: `historytool` ediție locală 1.0.2. Adaptorul Android înlocuiește dependența PyMuPDF cu pypdf și Android PdfRenderer și citește DOCX din OpenXML fără lxml.
+Motor original: `historytool` ediție locală 1.0.3. Adaptorul Android înlocuiește dependența PyMuPDF cu pypdf și Android PdfRenderer și citește DOCX din OpenXML fără lxml.
 
 ## Confidențialitate
 Originalele și baza de date SQLite sunt stocate doar în memoria privată a aplicației. Motorul ascultă exclusiv pe loopback. `INTERNET` este necesar pentru conexiunea WebView la serverul local, nu pentru transmiterea surselor în cloud. Nu există autentificare de rețea; nu expune serverul pe internet.

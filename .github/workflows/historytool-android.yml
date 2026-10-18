@@ -46,7 +46,7 @@ jobs:
       - name: Publish APK
         uses: actions/upload-artifact@v4
         with:
-          name: historytool-1.0.2-android-installer
+          name: historytool-1.0.3-android-installer
           path: historytool-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: historytool-1.0.2-android-installer
+          name: historytool-1.0.3-android-installer
           path: android-test-apk
       - name: Enable KVM acceleration
         run: |
@@ -96,7 +96,7 @@ jobs:
       - name: Download tested APK
         uses: actions/download-artifact@v4
         with:
-          name: historytool-1.0.2-android-installer
+          name: historytool-1.0.3-android-installer
           path: verified-apk
       - name: Verify Android package
         shell: bash
@@ -105,8 +105,8 @@ jobs:
           test -s verified-apk/app-debug.apk
           unzip -t verified-apk/app-debug.apk >/dev/null
           unzip -p verified-apk/app-debug.apk AndroidManifest.xml >/dev/null
-          cp verified-apk/app-debug.apk historytool-1.0.2.apk
-          sha256sum historytool-1.0.2.apk
+          cp verified-apk/app-debug.apk historytool-1.0.3.apk
+          sha256sum historytool-1.0.3.apk
       - name: Publish direct APK download
         shell: bash
         env:
@@ -114,14 +114,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          if gh release view v1.0.2-android --repo "$GH_REPO" >/dev/null 2>&1; then
-            gh release upload v1.0.2-android historytool-1.0.2.apk --clobber --repo "$GH_REPO"
+          if gh release view v1.0.3-android --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release upload v1.0.3-android historytool-1.0.3.apk --clobber --repo "$GH_REPO"
           else
-            gh release create v1.0.2-android historytool-1.0.2.apk \
+            gh release create v1.0.3-android historytool-1.0.3.apk \
               --repo "$GH_REPO" \
               --target "$GITHUB_SHA" \
-              --title "historytool 1.0.2 - APK Android" \
+              --title "historytool 1.0.3 - APK Android" \
               --notes "Descărcare directă APK historytool. Construit prin GitHub Actions; testele pe emulator verifică pornirea interfeței, importul, indexarea, căutarea, OCR-ul și persistența datelor. Este un build de test semnat pentru instalare, nu o versiune certificată pentru cercetare academică. Suportă dispozitive Android 64-bit." \
               --latest=false
           fi
-          gh release view v1.0.2-android --repo "$GH_REPO" --json url,assets
+          gh release view v1.0.3-android --repo "$GH_REPO" --json url,assets
