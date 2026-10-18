@@ -1,0 +1,13 @@
+# Local research sources must never be committed to GitHub.
+data/*
+!data/README.txt
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+.DS_Store
+*.log

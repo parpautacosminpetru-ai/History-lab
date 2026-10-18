@@ -1,0 +1,20 @@
+name: historytool tests
+on:
+  push:
+    paths:
+      - "historytool/**"
+      - ".github/workflows/historytool-tests.yml"
+  pull_request:
+    paths:
+      - "historytool/**"
+      - ".github/workflows/historytool-tests.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r historytool/requirements.txt pytest httpx Pillow
+      - run: cd historytool && python -m pytest tests -q

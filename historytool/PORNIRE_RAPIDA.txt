@@ -1,0 +1,23 @@
+historytool — PORNIRE RAPIDĂ
+
+WINDOWS:
+1. Instalează Python 3.11 sau mai nou.
+2. Deschide start_windows.bat cu dublu clic.
+3. Deschide http://127.0.0.1:8765 dacă nu apare singur.
+
+MAC/LINUX:
+1. Ai nevoie de Python 3.11+.
+2. Din folderul programului: sh start_mac_linux.sh
+3. Deschide http://127.0.0.1:8765
+
+ÎN PROGRAM:
+1. Atașează sursele PDF, DOCX, TXT, MD.
+2. Apasă Indexează sursele.
+3. Caută în interfața Interogare, apoi apasă pe un tag.
+4. În pasaj poți atașa dovada în Laborator și valida relații literale.
+5. Creează o copie de siguranță din butonul din Bibliotecă.
+
+DATELE NU SUNT TRIMISE ÎN CLOUD. PDF SCANATE: OCR NECESITĂ TESSERACT.
+IMPORTANT: indexul semantic exhaustiv automat NU ESTE CERTIFICAT.
+
+Detalii: README.md
