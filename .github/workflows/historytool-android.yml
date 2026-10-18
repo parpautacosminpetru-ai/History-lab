@@ -79,6 +79,9 @@ jobs:
         if: always()
         with:
           name: historytool-android-emulator-proof
-          path: historytool-emulator.png
+          path: |
+            historytool-emulator.png
+            historytool-emulator-tree.xml
+            historytool-emulator-log.txt
           if-no-files-found: ignore
           retention-days: 14
