@@ -8,6 +8,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebResourceError;
 import android.provider.OpenableColumns;
 import android.graphics.Color;
 import android.view.View;
@@ -121,6 +124,7 @@ public final class MainActivity extends Activity {
     }
 
     private void fail(String message) {
+        Log.e("historytool",message);
         startupError = message;
         ui.post(() -> showLoading("historytool nu a putut porni", message));
     }
@@ -163,6 +167,13 @@ public final class MainActivity extends Activity {
         settings.setTextZoom(100);
         web.addJavascriptInterface(new MobileInterface(), "HistorytoolMobile");
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                Log.i("historytool", "WebView finished: " + url);
+                view.evaluateJavascript("(document.body ? document.body.innerText.slice(0,130) : 'no body')", output -> Log.i("historytool", "DOM preview: " + output));
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError error) {
+                Log.e("historytool", "WebView error " + req.getUrl() + ": " + error);
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String target = request.getUrl().toString();
                 if (target.startsWith(LOCAL + "/api/") && !target.contains("/api/passages/")) {
@@ -177,6 +188,10 @@ public final class MainActivity extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage m) {
+                Log.i("historytool-js", m.message() + " ("+m.sourceId()+":"+m.lineNumber()+")");
+                return true;
+            }
             @Override public boolean onShowFileChooser(WebView w, android.webkit.ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = callback;
