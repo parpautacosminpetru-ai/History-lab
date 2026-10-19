@@ -98,7 +98,11 @@ export function queryEntries(data, {search = "", type = "all", sourceId = "all",
     if (type !== "all" && e.type !== type) return false;
     if (sourceId !== "all" && !(e.passageIds || []).some(id => sources.get(id) === sourceId)) return false;
     if (timeOnly && !matchesPeriod(e, center, span, includeUndated)) return false;
-    if (parts.length && !parts.every(part => entrySearchText(e, data).includes(part))) return false;
+    if (parts.length) {
+      const haystack = entrySearchText(e, data);
+      const words = haystack.split(/[^a-z0-9]+/i).filter(Boolean);
+      if (!parts.every(part => part.length === 1 ? words.includes(part) : haystack.includes(part))) return false;
+    }
     return true;
   });
   if (sort === "source") {
