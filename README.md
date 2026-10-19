@@ -46,7 +46,7 @@ Fotografiile brute sunt păstrate ca fișiere locale; exportul JSON include copi
 3. Sub **Artifacts**, descarcă `HistoryLab-Atlasul-Explicit-Android-APK`.
 4. Dezarhivează, transferă `app-debug.apk` pe dispozitivul Android și instalează-l. Poate fi necesar să permiți instalarea din această sursă în setările Android.
 
-APK-ul este **debug**, potrivit testelor personale, nu o versiune semnată pentru distribuție publică. Necesită Android 8.0 sau mai nou.
+Această versiune OCR folosește identificatorul Android separat `ro.historylab.atlasocr`, astfel că se poate instala **alături de APK-ul anterior**, fără să-i șteargă datele. Dacă vrei să muți datele vechi, exportă JSON din versiunea anterioară, apoi importă-l în HistoryLab OCR. APK-ul este **debug**, potrivit testelor personale, nu o versiune semnată pentru distribuție publică. Necesită Android 8.0 sau mai nou.
 
 ## Pornire în browser pentru verificare
 
