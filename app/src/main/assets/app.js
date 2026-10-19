@@ -6,7 +6,7 @@ import {newId, textKey, uniqueTerms, historicalToAxis, axisToHistorical,
 const $ = id => document.getElementById(id);
 const types = {eveniment:"EVENIMENT",afirmatie:"AFIRMAȚIE",persoana:"PERSOANĂ",teritoriu:"TERITORIU",
   institutie:"INSTITUȚIE",periodizare:"PERIODIZARE"};
-const empty = () => ({sources:[], passages:[], entries:[], relations:[]});
+const empty = () => ({sources:[], passages:[], entries:[], relations:[], pages:[]});
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const htmlLines = s => esc(s).replace(/\n/g, "<br>");

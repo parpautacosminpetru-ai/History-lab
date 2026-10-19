@@ -361,3 +361,38 @@ dialog::backdrop{background:rgba(16,35,40,.58)}
  .reader-context label:nth-child(2){flex:1 1 22%}
  .reader-context label:nth-child(3){flex:1 1 17%}
 }
+
+
+/* Motorul de indexare instant · doar operații mecanice, decizia aparține istoricului */
+.reader-speed-nav{display:flex;align-items:center;gap:5px;padding:7px 8px;background:#f7faf4;border-bottom:1px solid #e4ede5}
+.reader-speed-nav button{background:#fff;border:1px solid #d5e6dd;border-radius:5px;color:#29665c;min-height:28px;padding:4px 9px;font-size:12px;font-weight:750}
+.reader-speed-nav button:disabled{opacity:.45;cursor:not-allowed}
+.reader-speed-nav .reader-uncovered{font-size:10px;background:#e8f2e9;border-color:#cfdfcf;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.reader-speed-nav span{font-size:10px;color:#6b8a7e;white-space:nowrap}
+.reader-coverage{padding:7px 10px;background:#f9fbf8;border-bottom:1px solid #e5ede5}
+.reader-coverage>div:first-child{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:3px}
+.reader-coverage strong{font-size:10px;color:#276c5c}
+.reader-coverage span{font-size:9px;color:#83978b}
+.reader-coverage-track{height:5px;background:#e2e9e3;border-radius:7px;overflow:hidden;margin-top:5px}
+.reader-coverage-track>div{height:100%;width:0;background:#46947a;border-radius:7px;transition:width .15s ease}
+.reader-coverage-track[aria-valuenow="100"]>div{background:#247b68}
+.reader-speed-palette{margin:0 14px;padding:10px 0 12px;border-top:1px solid #e6eee5}
+.reader-speed-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.reader-speed-header strong{font-size:10px;letter-spacing:.2px;color:#476e61}
+.reader-speed-header button{border:0;background:transparent;color:#276d5c;font-weight:650;font-size:10px;cursor:pointer;text-align:right}
+.reader-palette-chips{display:flex;flex-wrap:wrap;gap:5px}
+.reader-palette-chips button{padding:6px 9px;background:#ecf5ed;color:#246b60;border:1px solid #c8e2d0;border-radius:20px;font-size:10px}
+.reader-palette-chips button:hover{background:#d7ebdb}
+.reader-palette-chips button span{font-size:8px;opacity:.7;margin-right:4px}
+.reader-palette-empty{font-size:10px;color:#859c8f;font-style:italic}
+.reader-auto-next{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:10px;color:#527568}
+.reader-auto-next input{accent-color:#267363}
+@media(max-width:780px){
+ .reader-speed-nav{padding:4px 5px;gap:3px}
+ .reader-speed-nav button{padding:3px 6px;min-height:27px;font-size:11px}
+ .reader-speed-nav .reader-uncovered{font-size:9px}
+ .reader-coverage{padding:5px 6px}
+ .reader-coverage span{font-size:8px}
+ .reader-speed-palette{margin:0 7px}
+ .reader-palette-chips button{padding:5px 7px}
+}

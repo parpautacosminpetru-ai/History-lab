@@ -147,6 +147,15 @@
         </section>
         <section class="reader-transcription">
           <div class="reader-section-head"><strong>02 / Textul recunoscut (editabil)</strong><span id="readerOcrCount">0 caractere</span></div>
+          <div class="reader-speed-nav" aria-label="Navigare mecanică prin text, fără interpretare">
+            <button type="button" id="readerSegmentPrev" title="Segment anterior" aria-label="Segment anterior">←</button>
+            <button type="button" id="readerSegmentNext" title="Segment următor" aria-label="Segment următor">→</button>
+            <button type="button" id="readerNextUncovered" class="reader-uncovered" title="Găsește următorul segment cu caractere încă neacoperite">Următorul neacoperit ↗</button>
+            <span id="readerSegmentCounter" aria-live="polite">0 / 0</span>
+          </div>
+          <div class="reader-coverage"><div><strong id="readerCoverageLabel">Acoperire textuală 0%</strong><span id="readerCoverageNote">Nu verifică exhaustivitatea semantică</span></div>
+            <div class="reader-coverage-track" role="progressbar" aria-label="Acoperire textuală" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="readerCoverageBar"><div id="readerCoverageFill"></div></div>
+          </div>
           <textarea id="readerOcrText" spellcheck="false" placeholder="Fotografiază o pagină: OCR-ul offline introduce automat textul aici. Compară-l cu fotografia și corectează doar erorile de transcriere."></textarea>
           <label class="reader-verification"><input id="readerVerified" type="checkbox">
             <span>Am confruntat transcrierea cu fotografia originală; o pot folosi pentru citate exacte.</span>
@@ -181,9 +190,17 @@
           <label>Rând <input id="readerLine" placeholder="Ex.: 8–11"></label>
           <label class="reader-field-full">Parafrază (opțională) <input id="readerParaphrase" placeholder="Dacă alegi să o introduci, numai ce este explicit"></label>
         </div>
+        <div class="reader-speed-palette">
+          <div class="reader-speed-header"><strong>Indici deja aleși de tine</strong>
+            <button id="readerUseLastIndices" type="button" title="Aplică prin alegere explicită indicii ultimei fișe">↶ Reaplică indicii anteriori</button>
+          </div>
+          <div id="readerPalette" class="reader-palette-chips"><span class="reader-palette-empty">Indici disponibili după primele fișe. Atinge un indice pentru a-l aplica manual.</span></div>
+          <label class="reader-auto-next"><input id="readerAutoNext" type="checkbox" checked>
+            <span>După salvare, pregătește mecanic segmentul următor (poți reveni oricând).</span></label>
+        </div>
         <div class="reader-quick-actions">
           <span>Pagina și sursa se atașează automat. Fără AI pentru interpretare.</span>
-          <button class="button primary" id="readerSaveQuick" type="submit">Salvează și continuă →</button>
+          <button class="button primary" id="readerSaveQuick" type="submit" title="Ctrl+Enter pentru salvare">Salvează + următorul ↗</button>
         </div>
       </form>
     </section>

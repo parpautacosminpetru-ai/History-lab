@@ -25,6 +25,22 @@ Acest depozit înlocuiește proiectul Android anterior. Conținutul vechi nu mai
 
 **Nu sunt incluse date istorice inventate sau exemple precompletate.** Baza pornește goală și se dezvoltă exclusiv prin înregistrările tale. Modelul OCR inclus în APK doar recunoaște textul; nu decide indexuri sau interpretări. Nu există server de cont și nu este cerută permisiunea INTERNET.
 
+## Indexare instant: fără timpi morți (v1.2)
+
+**Nu înlocuiește decizia istoricului.** Aplicația automatizează doar operațiile mecanice; toate clasificările rămân introduse ori acceptate de utilizator.
+
+1. Intră în **Atelier OCR**, selectează lucrarea, fotografiază pagina și verifică transcrierea față de fotografie.
+2. Folosește **←**, **→** și **Următorul neacoperit** pentru a naviga prin fragmente propuse mecanic de punctuație, nu semantic. Poți selecta manual orice sintagmă, nu doar propozițiile propuse.
+3. Citatul exact și poziția lui sunt preluate din transcrierea verificată, fără reintroducerea sursei și a paginii.
+4. Atinge termenii din **Indici deja aleși de tine** sau **Reaplică indicii anteriori**. Se reutilizează exclusiv alegerile tale trecute, fără clasificare automată.
+5. Apasă **Salvează + următorul**. Fișa și trimiterea exactă sunt salvate; fragmentul următor neacoperit este pregătit automat. Pentru a reveni, folosește butoanele de navigare.
+6. **Acoperire textuală** arată procentul caracterelor OCR acoperite de citatele salvate, fără dublă numărare. **Acest procent nu dovedește exhaustivitatea semantică.**
+7. Dacă modifici textul OCR, selecțiile ale căror poziții nu mai corespund nu sunt numărate și sunt semnalate pentru reverificare.
+
+Scurtături: **Ctrl+Enter** în editorul indexurilor pentru salvare, **Alt+→/Alt+←** pentru fragmente, **Ctrl+Enter** în textul OCR pentru preluarea selecției. Pe telefon se folosesc butoanele.
+
+**Instalare fără risc pentru datele vechi:** identificatorul Android al versiunii Instant este separat, astfel încât se instalează alături de **HistoryLab OCR**. Exportează JSON în versiunea veche și importă în cea nouă pentru transferul fișelor. Nu dezinstala aplicația veche înainte să verifici arhiva.
+
 ## Lucrul direct pe textul original (mod rapid)
 
 1. Înregistrează o lucrare în **Surse → ＋ Sursă**.
@@ -46,7 +62,7 @@ Fotografiile brute sunt păstrate ca fișiere locale; exportul JSON include copi
 3. Sub **Artifacts**, descarcă `HistoryLab-Atlasul-Explicit-Android-APK`.
 4. Dezarhivează, transferă `app-debug.apk` pe dispozitivul Android și instalează-l. Poate fi necesar să permiți instalarea din această sursă în setările Android.
 
-Această versiune OCR folosește identificatorul Android separat `ro.historylab.atlasocr`, astfel că se poate instala **alături de APK-ul anterior**, fără să-i șteargă datele. Dacă vrei să muți datele vechi, exportă JSON din versiunea anterioară, apoi importă-l în HistoryLab OCR. APK-ul este **debug**, potrivit testelor personale, nu o versiune semnată pentru distribuție publică. Necesită Android 8.0 sau mai nou.
+Versiunea OCR anterioară folosește identificatorul `ro.historylab.atlasocr`, iar versiunea Instant folosește `ro.historylab.atlasinstant`, astfel că se poate instala **alături de APK-ul anterior**, fără să-i șteargă datele. Dacă vrei să muți datele vechi, exportă JSON din versiunea anterioară, apoi importă-l în HistoryLab OCR. APK-ul este **debug**, potrivit testelor personale, nu o versiune semnată pentru distribuție publică. Necesită Android 8.0 sau mai nou.
 
 ## Pornire în browser pentru verificare
 

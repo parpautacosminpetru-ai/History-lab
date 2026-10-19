@@ -1,5 +1,6 @@
 import {newId, uniqueTerms, historicalToAxis,
   findExistingPassage, putObjects} from "./model.js";
+import {coverageReport, nextCandidate, indexPalette, appendChosenTag} from "./speed.js";
 
 /**
  * Atlasul Explicit · atelier OCR offline.
@@ -17,6 +18,94 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
   let pendingMetadata=null;
   let ocrTimer=null, savedRange=null, imageZoom=100, processing=false;
   let activePage=null;
+  let segmentIndex=-1, lastAutoTitle="", lastManualTags=null, report=null;
+
+  function pagePassages(){
+    return !activePage ? [] : getData().passages.filter(p=>p.pageId===activePage.id);
+  }
+
+  function refreshCoverage() {
+    report=coverageReport($("readerOcrText").value,pagePassages(),activePage?.id||"");
+    const {total,indexed,percent,stale,unknown,candidates}=report;
+    $("readerCoverageLabel").textContent="Acoperire textuală "+percent+"% · "+indexed+"/"+total+" caractere";
+    $("readerCoverageBar").setAttribute("aria-valuenow",String(percent));
+    $("readerCoverageFill").style.width=percent+"%";
+    $("readerCoverageNote").textContent=stale
+      ? stale+" selecții au poziții neconcordante după editarea textului; reverifică."
+      : (unknown?"Citatele fără poziții OCR nu sunt contorizate.":
+        "Acoperire de caractere, NU exhaustivitate semantică");
+    if(segmentIndex>=candidates.length)segmentIndex=-1;
+    $("readerSegmentCounter").textContent=(segmentIndex<0?0:segmentIndex+1)+" / "+candidates.length;
+    for(const id of ["readerSegmentPrev","readerSegmentNext","readerNextUncovered"])
+      $(id).disabled=!activePage||!$("readerOcrText").value.trim();
+  }
+
+  function restoreAutoNext(){
+    try {
+      const setting=localStorage.getItem("historylab-auto-next");
+      if(setting!==null)$("readerAutoNext").checked=setting==="true";
+    }catch(_){}
+  }
+
+  function loadRange(start,end,{autoTitle=true}={}) {
+    const fullText=$("readerOcrText").value;
+    if(!activePage||start<0||end<=start||end>fullText.length){
+      notice("Nu există o selecție validă în text.");return false;
+    }
+    const quote=fullText.slice(start,end);
+    if(!quote.trim()){notice("Selecția nu conține text.");return false;}
+    const currentTitle=$("readerTitle").value.trim();
+    const title=quote.trim().replace(/\s+/g," ").slice(0,110);
+    savedRange={start,end,quote};
+    $("readerQuote").value=quote;
+    if(autoTitle&&(!currentTitle||currentTitle===lastAutoTitle))
+      $("readerTitle").value=title;
+    lastAutoTitle=title;
+    const candidates=report?.candidates||[];
+    const i=candidates.findIndex(s=>s.start<=start&&s.end>=end);
+    segmentIndex=i;
+    $("readerSegmentCounter").textContent=(i<0?0:i+1)+" / "+candidates.length;
+    return true;
+  }
+
+  function goSegment(direction=1, onlyUncovered=false, afterIndex=segmentIndex) {
+    if(!activePage){notice("Alege o pagină originală.");return;}
+    refreshCoverage();
+    const segment=nextCandidate(report,afterIndex,direction,onlyUncovered);
+    if(!segment){
+      notice(onlyUncovered?"Nu există segmente mecanice neacoperite.":"Nu există text OCR pe această pagină.");
+      return;
+    }
+    if(!loadRange(segment.start,segment.end))return;
+    const area=$("readerOcrText");
+    area.focus({preventScroll:true});
+    area.setSelectionRange(segment.start,segment.end);
+    $("readerQuote").scrollIntoView({behavior:"smooth",block:"nearest"});
+    notice("Segment propus de punctuație; verifică delimitarea și alege tu indexurile.");
+  }
+
+  function renderPalette() {
+    const opts=indexPalette(getData().entries);
+    $("readerPalette").innerHTML=opts.length
+      ? opts.map(({kind,name})=>'<button type="button" data-kind="'+kind+'" data-name="'+esc(name)+
+          '"><span>'+ (kind==="topic"?"TEMĂ":"INDICE")+'</span>'+esc(name)+'</button>').join("")
+      : '<span class="reader-palette-empty">După primele fișe, indicii aleși manual vor apărea aici.</span>';
+    for(const el of $("readerPalette").querySelectorAll("button[data-name]")){
+      el.onclick=()=>{
+        const target=el.dataset.kind==="topic"?"readerTopics":"readerIndexes";
+        $(target).value=appendChosenTag($(target).value,el.dataset.name);
+        notice("Indice aplicat la alegerea ta.");
+      };
+    }
+  }
+
+  function reapplyLastTags(){
+    if(!lastManualTags){notice("Nu există încă indici folosiți în sesiunea curentă.");return;}
+    for(const [id,terms] of [["readerTopics",lastManualTags.topics],["readerIndexes",lastManualTags.indexes]]){
+      for(const term of terms)$(id).value=appendChosenTag($(id).value,term);
+    }
+    notice("Indicii anteriori au fost aplicați la cererea ta. Verifică-i pentru acest fragment.");
+  }
 
   function findPage(id) {return getData().pages.find(p=>p.id===id);}
   function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({
@@ -78,6 +167,8 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
     $("readerType").value="afirmatie";
     $("readerQuote").value="";
     savedRange=null;
+    segmentIndex=-1;
+    lastAutoTitle="";
   }
   function emptyPageView(){
     currentPageId=null;activePage=null;imageZoom=100;
@@ -95,6 +186,8 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
     resetIndexFields();
     setSaveState("Aștept fotografia");
     contextIds.forEach(id=>$(id).disabled=false);
+    refreshCoverage();
+    renderPalette();
     renderPages();
   }
   function openPage(id) {
@@ -125,6 +218,7 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
     setSaveState(p.verified?"Transcriere verificată":"OCR neconfirmat · corectează înainte de citare");
     saveReaderContext();renderPages();
     $("readerPageList").value=p.id;
+    refreshCoverage();renderPalette();
   }
   function safePhotoUrl(p) {
     if(typeof p.imageDataUri==="string"&&/^data:image\/(jpeg|png|webp);base64,/i.test(p.imageDataUri))return p.imageDataUri;
@@ -149,23 +243,18 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
     $("readerVerified").checked=false;
     $("readerOcrCount").textContent=activePage.ocrText.length+" caractere";
     $("readerStatus").textContent="p. "+activePage.pageNumber+" · corectare OCR";
-    $("readerQuote").value="";savedRange=null;
+    $("readerQuote").value="";savedRange=null;segmentIndex=-1;
+    refreshCoverage();
     setSaveState("Se salvează transcrierea…");
     window.clearTimeout(ocrTimer);
     ocrTimer=window.setTimeout(()=>flushOcr().catch(e=>notice(e.message)),450);
   }
   function loadSelectedText(){
     if(!activePage){notice("Fotografiază o pagină înainte să indexezi.");return;}
-    const area=$("readerOcrText"),start=area.selectionStart,end=area.selectionEnd;
-    const snippet=area.value.slice(start,end);
-    if(start===end || !snippet.trim()){notice("Selectează mai întâi textul exact din transcriere.");return;}
-    savedRange={start,end,quote:snippet};
-    $("readerQuote").value=snippet;
-    // Eticheta pornește de la cuvintele vizibile, dar numai utilizatorul stabilește clasificarea.
-    if(!$("readerTitle").value.trim())
-      $("readerTitle").value=snippet.trim().replace(/\s+/g," ").slice(0,110);
-    $("readerSaveQuick").scrollIntoView({behavior:"smooth",block:"nearest"});
-    notice("Selecția este pregătită. Tu stabilești indexurile.");
+    const area=$("readerOcrText");
+    if(!loadRange(area.selectionStart,area.selectionEnd))return;
+    $("readerQuote").scrollIntoView({behavior:"smooth",block:"nearest"});
+    notice("Fragmentul original a fost preluat fără transcriere. Tu alegi indexurile.");
   }
   function beginNewPage(next=false){
     const sourceId=$("readerSource").value || activePage?.sourceId || "";
@@ -262,7 +351,7 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
     activePage.ocrText=$("readerOcrText").value;
     activePage.verified=checked;
     try{await flushOcr();$("readerStatus").textContent="p. "+activePage.pageNumber+
-      (checked?" · verificată":" · neverificată");renderPages();}
+      (checked?" · verificată":" · neverificată");renderPages();refreshCoverage();}
     catch(e){notice("Nu am putut salva verificarea: "+e.message);}
   }
   function validHistoricalYear(raw) {
@@ -307,6 +396,8 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
       paraphrase:$("readerParaphrase").value.trim(),
       yearStart:st,yearEnd:en,month:null,day:null,dateText:"",lat:null,lon:null,geometry:[]
     };
+    const selectedStart=savedRange.start;
+    const chosen={topics:[...entry.topics],indexes:[...entry.indexes]};
     const writes=[{table:"entries",value:entry}];
     if(!old)writes.unshift({table:"passages",value:passage});
     $("readerSaveQuick").disabled=true;
@@ -319,16 +410,30 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
       const linkedIds=new Set(getData().passages.filter(x=>x.pageId===savedPageId).map(x=>x.id));
       $("readerIndexedCount").textContent=getData().entries.filter(e=>
         e.passageIds?.some(pid=>linkedIds.has(pid))).length+" fișe din această pagină";
+      lastManualTags=chosen;
       resetIndexFields();
-      $("readerOcrText").focus();
+      renderPalette();
+      refreshCoverage();
       setSaveState("Indexare salvată · gata pentru fragmentul următor");
-      notice(old?"Fișă salvată. Citatul existent a fost reutilizat.":"Fișă și citat exact salvate, cu sursa și pagina.");
+      if($("readerAutoNext").checked){
+        const current=report.candidates.findIndex(seg=>seg.start<=selectedStart&&seg.end>selectedStart);
+        const anyUncovered=report.candidates.some(seg=>!seg.complete);
+        if(anyUncovered)goSegment(1,true,current);
+        else notice("Toate caracterele paginii sunt acoperite textual. Verifică separat exhaustivitatea semantică.");
+      } else {
+        $("readerOcrText").focus();
+        notice(old?"Fișă salvată; citatul existent a fost reutilizat.":"Fișă și citat salvate, fără repetarea sursei.");
+      }
     }catch(e){notice("Nu am putut salva fișa: "+e.message);}
     finally{$("readerSaveQuick").disabled=false;}
   }
   function refresh(){
     renderSources();
-    if(currentPageId&&findPage(currentPageId))openPage(currentPageId);
+    renderPalette();
+    if(currentPageId&&findPage(currentPageId)){
+      activePage=findPage(currentPageId);
+      refreshCoverage();
+    }else if(currentPageId)emptyPageView();
   }
 
   $("readerClose").onclick=hide;
@@ -352,12 +457,29 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
   $("readerOcrText").oninput=scheduleOcrSave;
   $("readerVerified").onchange=e=>verifyPage(e.target.checked);
   $("readerSelect").onclick=loadSelectedText;
+  $("readerSegmentPrev").onclick=()=>goSegment(-1);
+  $("readerSegmentNext").onclick=()=>goSegment(1);
+  $("readerNextUncovered").onclick=()=>goSegment(1,true);
+  $("readerUseLastIndices").onclick=reapplyLastTags;
+  $("readerAutoNext").onchange=event=>{
+    try{localStorage.setItem("historylab-auto-next",String(event.target.checked));}catch(_){}
+  };
   $("readerQuickForm").onsubmit=quickSave;
   $("readerLocalPick").onchange=localFile;
   ["readerOcrText"].forEach(id=>$(id).addEventListener("keydown",e=>{
     if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();loadSelectedText();}
   }));
+  $("readerQuickForm").addEventListener("keydown",e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
+      e.preventDefault();$("readerQuickForm").requestSubmit();
+    }else if(e.altKey&&e.key==="ArrowRight"){
+      e.preventDefault();goSegment(1);
+    }else if(e.altKey&&e.key==="ArrowLeft"){
+      e.preventDefault();goSegment(-1);
+    }
+  });
   renderSources();restoreContext();
+  restoreAutoNext();
   emptyPageView();
   return {show,hide,refresh,openPage(id){show();openPage(id);}};
 }

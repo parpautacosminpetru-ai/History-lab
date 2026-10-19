@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Fără INTERNET sau servicii AI. Camera externă este deschisă prin intent. -->
     <application
-        android:label="HistoryLab OCR"
+        android:label="HistoryLab Instant"
         android:allowBackup="false"
         android:usesCleartextTraffic="false"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"

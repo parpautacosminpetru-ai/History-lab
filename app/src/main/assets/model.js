@@ -70,7 +70,11 @@ export function matchesPeriod(entry, center, span, includeUndated = false) {
 export function passageFingerprint(p) {
   const locator = [p.sourceId, p.chapter, p.pageStart, p.pageEnd, p.paragraph,
     p.sentence, p.line].map(v => String(v ?? "").trim()).join("|");
-  return locator + "|" + JSON.stringify(String(p.quote ?? ""));
+  // Același citat poate apărea de două ori pe aceeași pagină. Atunci
+  // poziția originală este parte din identitatea pasajului, nu se deduplică.
+  const occurrence = p.pageId && Number.isInteger(p.offsetStart) && Number.isInteger(p.offsetEnd)
+    ? "|photo:" + p.pageId + "@" + p.offsetStart + ":" + p.offsetEnd : "";
+  return locator + occurrence + "|" + JSON.stringify(String(p.quote ?? ""));
 }
 
 export function findExistingPassage(passages, candidate) {
