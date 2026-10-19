@@ -82,10 +82,20 @@ export function findExistingPassage(passages, candidate) {
   return passages.find(p => passageFingerprint(p) === fingerprint) || null;
 }
 
-export function entrySearchText(entry, data) {
-  const passages = data.passages.filter(p => (entry.passageIds || []).includes(p.id));
+const searchSnapshots = new WeakMap();
+
+export function buildSearchIndex(data) {
+  return {
+    passages: new Map(data.passages.map(p => [p.id, p])),
+    sources: new Map(data.sources.map(s => [s.id, s]))
+  };
+}
+
+export function entrySearchText(entry, data, lookup = null) {
+  const index = lookup || buildSearchIndex(data);
+  const passages = (entry.passageIds || []).map(id => index.passages.get(id)).filter(Boolean);
   const sourceIds = new Set(passages.map(p => p.sourceId));
-  const sources = data.sources.filter(s => sourceIds.has(s.id));
+  const sources = [...sourceIds].map(id => index.sources.get(id)).filter(Boolean);
   return textKey([
     entry.title, entry.type, entry.place, entry.people, entry.topics?.join(" "),
     entry.indexes?.join(" "), entry.paraphrase, entry.dateText, dateLabel(entry),
@@ -97,32 +107,40 @@ export function entrySearchText(entry, data) {
 export function queryEntries(data, {search = "", type = "all", sourceId = "all",
   center = 500, span = 5000, timeOnly = false, includeUndated = false, sort = "time"} = {}) {
   const parts = textKey(search).split(/\s+/).filter(Boolean);
-  const sources = new Map(data.passages.map(p => [p.id, p.sourceId]));
+  let cache = searchSnapshots.get(data);
+  if (!cache) {cache = new Map();searchSnapshots.set(data,cache);}
+  const index = parts.length || sourceId !== "all" || sort === "source"
+    ? buildSearchIndex(data) : null;
   const entries = data.entries.filter(e => {
     if (type !== "all" && e.type !== type) return false;
-    if (sourceId !== "all" && !(e.passageIds || []).some(id => sources.get(id) === sourceId)) return false;
+    if (sourceId !== "all" && !(e.passageIds || []).some(id => index.passages.get(id)?.sourceId === sourceId)) return false;
     if (timeOnly && !matchesPeriod(e, center, span, includeUndated)) return false;
     if (parts.length) {
-      const haystack = entrySearchText(e, data);
-      const words = haystack.split(/[^a-z0-9]+/i).filter(Boolean);
+      let haystack = cache.get(e.id);
+      if (haystack === undefined) {
+        haystack = entrySearchText(e, data, index);
+        cache.set(e.id, haystack);
+      }
+      const words = parts.some(part => part.length === 1)
+        ? haystack.split(/[^\p{L}\p{N}]+/u).filter(Boolean) : null;
       if (!parts.every(part => part.length === 1 ? words.includes(part) : haystack.includes(part))) return false;
     }
     return true;
   });
   if (sort === "source") {
     const anchor = e => {
-      const p = data.passages.find(x => x.id === e.passageIds?.[0]);
-      const s = data.sources.find(x => x.id === p?.sourceId);
+      const p = index.passages.get(e.passageIds?.[0]);
+      const s = index.sources.get(p?.sourceId);
       return [textKey(s?.author), textKey(s?.title), Number(p?.pageStart || 0), Number(p?.paragraph || 0)];
     };
-    entries.sort((a, b) => {
-      const aa = anchor(a), bb = anchor(b);
-      return aa[0].localeCompare(bb[0]) || aa[1].localeCompare(bb[1]) || aa[2] - bb[2] || aa[3] - bb[3];
-    });
-  } else {
-    entries.sort((a, b) => (dateAxis(a) ?? Infinity) - (dateAxis(b) ?? Infinity)
-      || a.title.localeCompare(b.title, "ro"));
+    // Refolosește cheile de sortare pentru a evita calcule în fiecare comparație.
+    const keyed = entries.map(e => ({entry:e, key:anchor(e)}));
+    keyed.sort((a, b) => a.key[0].localeCompare(b.key[0])
+      || a.key[1].localeCompare(b.key[1]) || a.key[2] - b.key[2] || a.key[3] - b.key[3]);
+    return keyed.map(x=>x.entry);
   }
+  entries.sort((a, b) => (dateAxis(a) ?? Infinity) - (dateAxis(b) ?? Infinity)
+      || a.title.localeCompare(b.title, "ro"));
   return entries;
 }
 

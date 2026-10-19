@@ -5,11 +5,11 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'ro.historylab.atlasinstant'
+        applicationId 'ro.historylab.audit13'
         minSdk 26
         targetSdk 34
-        versionCode 3
-        versionName '1.2-indexare-instant'
+        versionCode 4
+        versionName '1.3-audit'
     }
 
     compileOptions {

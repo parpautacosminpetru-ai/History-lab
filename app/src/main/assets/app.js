@@ -20,6 +20,7 @@ let data=empty(), world=null, tab="entries", selectedId=null, selectedSource=nul
 let reader=null;
 let currentSourceId=null, currentEntryId=null, mode=null, draftPolygon=[];
 let toastTimer, renderedDots=[], renderedTime=[];
+let entryLimit=150;
 let timeline={center:500, span:5000}, map={lon:19, lat:46, zoom:2.2};
 let timeDrag=null, mapPointers=new Map(), mapLast=null, mapWasDragged=false;
 
@@ -163,14 +164,28 @@ function drawScene() {
   ctx.restore();
 
   // Suprapuneri controlate: punctele apropiate devin un grup selectabil.
+  // Grupare spațială cu grilă: nu compara fiecare punct cu toate celelalte.
   const groups=[];
+  const buckets=new Map(),cell=20;
+  const key=(x,y)=>x+":"+y;
   for(const entry of visible){
     if(entry.lat==null||entry.lon==null)continue;
     const p=coordToScreen(entry.lon,entry.lat);
     if(p.x< -35||p.x>sceneW+35||p.y< -35||p.y>sceneH+35)continue;
-    let g=groups.find(g=>Math.hypot(g.x-p.x,g.y-p.y)<20);
+    const cx=Math.floor(p.x/cell),cy=Math.floor(p.y/cell);
+    let g=null;
+    outer:for(let xx=cx-1;xx<=cx+1;xx++)for(let yy=cy-1;yy<=cy+1;yy++){
+      for(const candidate of buckets.get(key(xx,yy))||[]){
+        if(Math.hypot(candidate.x-p.x,candidate.y-p.y)<20){g=candidate;break outer;}
+      }
+    }
     if(g)g.items.push(entry);
-    else groups.push({x:p.x,y:p.y,items:[entry]});
+    else {
+      g={x:p.x,y:p.y,items:[entry]};groups.push(g);
+      const k=key(cx,cy);
+      if(!buckets.has(k))buckets.set(k,[]);
+      buckets.get(k).push(g);
+    }
   }
   renderedDots=groups;
   for(const group of groups){
@@ -319,18 +334,25 @@ function renderList(){
   const box=$("libraryList");
   if(tab==="entries"){
     const entries=queryEntries(data,queryOptions());
-    box.innerHTML=entries.length ? entries.map(e=>{
+    const visible=entries.slice(0,entryLimit);
+    box.innerHTML=entries.length ? visible.map(e=>{
       const cs=getCites(e), p=cs[0]?.p,s=cs[0]?.s;
       return cardMarkup({type:types[e.type]||e.type,title:e.title,id:e.id,action:"entry",
         subtitle:e.paraphrase||p?.quote||"Fără descriere",
         meta:dateLabel(e)+"　·　"+(s?.author||s?.title||"Sursă")+"　"+(p?.pageStart?"p. "+p.pageStart:"")});
-    }).join(""):emptyList(data.entries.length?"Niciun rezultat pentru aceste criterii.":"Începe cu o sursă și prima fișă.",
+    }).join("")+(entries.length>visible.length
+      ? '<button type="button" id="loadMoreEntries" class="load-more-entries">Afișează încă 150 ('+visible.length+'/'+entries.length+')</button>' : ""):
+      emptyList(data.entries.length?"Niciun rezultat pentru aceste criterii.":"Începe cu o sursă și prima fișă.",
       data.entries.length?"Modifică intervalul temporal sau filtrele.":"Fișele apar aici și pe hartă, cu trimiterea exactă la text.");
-    $("filterStatus").textContent=entries.length+" / "+data.entries.length+" fișe";
+    $("filterStatus").textContent=visible.length+" afișate / "+entries.length+" rezultate · "+data.entries.length+" fișe total";
+    const more=box.querySelector("#loadMoreEntries");
+    if(more)more.onclick=()=>{const position=box.scrollTop;entryLimit+=150;renderList();box.scrollTop=position;};
   }else if(tab==="sources"){
     const srcs=data.sources.filter(sourceMatches);
+    const passageCounts=new Map();
+    for(const p of data.passages)passageCounts.set(p.sourceId,(passageCounts.get(p.sourceId)||0)+1);
     box.innerHTML=srcs.length?srcs.map(s=>{
-      const count=data.passages.filter(p=>p.sourceId===s.id).length;
+      const count=passageCounts.get(s.id)||0;
       return cardMarkup({type:"SURSĂ · "+count+" fragmente",title:s.title,subtitle:s.bibliography||s.speciality,
         meta:[s.author,s.publication,s.edition].filter(Boolean).join(" · "),id:s.id,action:"source"});
     }).join(""):emptyList("Nicio sursă înregistrată.","Folosește butonul „＋ Sursă” pentru catalog.");
@@ -403,7 +425,8 @@ function openSource(id){
   const s=sourceOf(id);if(!s)return;
   selectedId=null;selectedSource=id;
   const passages=data.passages.filter(p=>p.sourceId===id);
-  const entryIds=new Set(passages.flatMap(p=>data.entries.filter(e=>e.passageIds?.includes(p.id)).map(e=>e.id)));
+  const ids=new Set(passages.map(p=>p.id));
+  const entryIds=new Set(data.entries.filter(e=>e.passageIds?.some(id=>ids.has(id))).map(e=>e.id));
   const entries=queryEntries(data,{sort:"source"}).filter(e=>entryIds.has(e.id));
   openPanel('<div class="detail-kicker">CATALOGUL SURSELOR</div><h2>'+esc(s.title)+'</h2>'+
     '<div class="detail-meta">'+esc([s.author,s.speciality,s.publication,s.edition].filter(Boolean).join(" · "))+'</div>'+
@@ -435,7 +458,7 @@ async function deleteEntry(id){
     hideDetail();notice("Fișa a fost eliminată.");
   }catch(e){notice("Eroare: "+e.message);}
 }
-function setTab(next){tab=next;renderList();}
+function setTab(next){tab=next;entryLimit=150;renderList();}
 function setTimeline(center,span=timeline.span){
   timeline.span=clamp(span,.083333,20000);
   timeline.center=clamp(center,-10000,3000);
@@ -680,6 +703,7 @@ function archiveDownload(text) {
 }
 async function exportArchive(){
   try{
+    if(reader) await reader.flushPending();
     const backup=await makeBackup(),content=JSON.stringify(backup,null,2);
     if(window.HistoryBridge&&typeof window.HistoryBridge.saveJson==="function")
       window.HistoryBridge.saveJson(content);
@@ -693,7 +717,10 @@ async function importArchive(event){
   try{
     const backup=JSON.parse(await file.text());
     if(!confirm("IMPORT: înlocuiești toate sursele și fișele de pe acest dispozitiv cu arhiva selectată. Continuăm?"))return;
-    await replaceData(backup);hideDetail();await reload();
+    if(reader) await reader.flushPending();
+    await replaceData(backup);
+    if(reader)reader.resetAfterImport();
+    hideDetail();await reload();
     notice("Arhiva a fost importată și verificată.");
   }catch(e){notice("Import oprit: "+e.message);}
 }
@@ -748,7 +775,7 @@ function bind(){
   $("timeIn").onclick=()=>setTimeline(timeline.center,timeline.span/2);
   $("timeOut").onclick=()=>setTimeline(timeline.center,timeline.span*2);
   for(const id of ["searchInput","typeFilter","sourceFilter","sortFilter","timeOnly"]){
-    $(id).addEventListener(["searchInput"].includes(id)?"input":"change",renderList);
+    $(id).addEventListener(["searchInput"].includes(id)?"input":"change",()=>{entryLimit=150;renderList();});
   }
   document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
   $("toggleLibrary").onclick=()=>{$("libraryPanel").classList.toggle("collapsed");};
@@ -762,7 +789,7 @@ function bind(){
 }
 async function initialize(){
   bind();resize();
-  reader=setupReader({getData:()=>data,onDataChanged:()=>reload(),
+  reader=setupReader({getData:()=>data,onDataChanged:()=>reload(),onReaderClosed:()=>setTab("entries"),
     notice,openSourceEditor:()=>openSourceEditor(),openEntry:id=>openEntry(id)});
   try{
     data=await loadData();renderSelects();renderList();reader.refresh();

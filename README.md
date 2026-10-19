@@ -25,6 +25,18 @@ Acest depozit înlocuiește proiectul Android anterior. Conținutul vechi nu mai
 
 **Nu sunt incluse date istorice inventate sau exemple precompletate.** Baza pornește goală și se dezvoltă exclusiv prin înregistrările tale. Modelul OCR inclus în APK doar recunoaște textul; nu decide indexuri sau interpretări. Nu există server de cont și nu este cerută permisiunea INTERNET.
 
+## Verificări și limitări ale versiunii 1.3 (audit)
+
+- S-au exercitat interactiv, în Chromium cu stocare simulată, înregistrarea sursei, fotografia/OCR simulat, verificarea, selectarea citatelor, salvarea consecutivă, căutarea, exportul, ștergerea și restaurarea arhivei. Aceste simulări **nu** înlocuiesc testarea motorului OCR și a camerei pe un telefon fizic.
+- Căutarea folosește indexuri temporare reutilizate pentru același instantaneu de date, în locul parcurgerilor repetate ale tuturor pasajelor. Pentru colecțiile mari, panoul încarcă progresiv primele 150 de fișe, cu opțiunea de a afișa mai multe; toate fișele rămân interogabile.
+- Fișele fără dată nu mai sunt ascunse la prima pornire; **Filtrează după timp** este dezactivat implicit.
+- În Atelier OCR, exportul așteaptă salvarea ultimei modificări de transcriere; importul resetează editorul vechi după restaurarea reușită.
+- Permisiunile \`INTERNET\` și \`ACCESS_NETWORK_STATE\` sunt eliminate explicit din manifestul final, inclusiv dacă sunt declarate indirect de biblioteci. Verifică întotdeauna permisiunile APK-ului compilat.
+- Pe telefoane înguste, fotografia și textul sunt afișate pe toată lățimea, unul sub celălalt, în același atelier.
+- \`HistoryLab Audit\` folosește un identificator Android separat (\`ro.historylab.audit13\`) ca să nu înlocuiască prin accident aplicația de test anterioară. Transferă datele doar prin export/import JSON. **Nu dezinstala aplicația veche înainte de verificarea completă a copiei**.
+
+**Nu este încă un produs certificat sau gata de distribuție academică.** Sunt necesare încercări cu cărți reale, pe telefoane reale, măsurarea ratei de eroare OCR, restaurare pe alt dispozitiv, testare cu sute de pagini scanate și o cheie de semnare de producție stabilă. APK-ul GitHub este de tip debug.
+
 ## Indexare instant: fără timpi morți (v1.2)
 
 **Nu înlocuiește decizia istoricului.** Aplicația automatizează doar operațiile mecanice; toate clasificările rămân introduse ori acceptate de utilizator.

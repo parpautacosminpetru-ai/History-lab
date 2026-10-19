@@ -7,7 +7,7 @@ import {coverageReport, nextCandidate, indexPalette, appendChosenTag} from "./sp
  * Recunoașterea este exclusiv mecanică, prin biblioteca locală din Android.
  * Clasificarea semantică rămâne integral sub controlul utilizatorului.
  */
-export function setupReader({getData, onDataChanged, notice, openSourceEditor, openEntry}) {
+export function setupReader({getData, onDataChanged, notice, openSourceEditor, openEntry, onReaderClosed}) {
   const $ = id => document.getElementById(id);
   const panel = $("readerPanel");
   const native = () => window.HistoryOCRBridge;
@@ -141,6 +141,7 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
   function hide(){
     flushOcr().catch(e=>notice("Salvare OCR: "+e.message));
     panel.classList.add("hidden");
+    if (onReaderClosed) onReaderClosed();
   }
   function renderSources(){
     const previous=$("readerSource").value;
@@ -481,5 +482,11 @@ export function setupReader({getData, onDataChanged, notice, openSourceEditor, o
   renderSources();restoreContext();
   restoreAutoNext();
   emptyPageView();
-  return {show,hide,refresh,openPage(id){show();openPage(id);}};
+  return {show,hide,refresh,
+    flushPending:()=>flushOcr(),
+    resetAfterImport:()=>{
+      window.clearTimeout(ocrTimer);ocrTimer=null;
+      emptyPageView();panel.classList.add("hidden");
+    },
+    openPage(id){show();openPage(id);}};
 }
