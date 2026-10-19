@@ -1,5 +1,5 @@
 // HistoryLab · nucleul local, fara AI si fara server.
-export const TABLES = ["sources", "passages", "entries", "relations"];
+export const TABLES = ["sources", "passages", "entries", "relations", "pages"];
 const DB_NAME = "historylab-explicit-v1";
 
 export function newId() {
@@ -126,6 +126,8 @@ export function validateBackup(value) {
   if (!value || typeof value !== "object" || value.format !== "historylab-explicit-1") {
     throw new Error("Fișierul nu este o arhivă HistoryLab compatibilă.");
   }
+  // Arhivele realizate înainte de atelierul OCR nu conțin "pages".
+  if (value.pages === undefined) value.pages = [];
   for (const table of TABLES) {
     if (!Array.isArray(value[table])) throw new Error("Lipsește secțiunea " + table);
     const ids = new Set();
@@ -137,9 +139,12 @@ export function validateBackup(value) {
     }
   }
   const sources = new Set(value.sources.map(s => s.id));
+  const pages = new Set(value.pages.map(p => p.id));
+  if (value.pages.some(p => !sources.has(p.sourceId))) throw new Error("Pagină fără sursă bibliografică.");
   const passages = new Set(value.passages.map(p => p.id));
   const entries = new Set(value.entries.map(e => e.id));
-  if (value.passages.some(p => !sources.has(p.sourceId))) throw new Error("Trimitere la sursă absentă.");
+  if (value.passages.some(p => !sources.has(p.sourceId) || (p.pageId && !pages.has(p.pageId))))
+    throw new Error("Trimitere la sursă sau fotografie absentă.");
   if (value.entries.some(e => !Array.isArray(e.passageIds) || !e.passageIds.length
     || e.passageIds.some(id => !passages.has(id)))) throw new Error("Fișă fără dovadă validă.");
   if (value.relations.some(r => !entries.has(r.fromId) || !entries.has(r.toId)
@@ -151,7 +156,7 @@ let connection;
 export function openDatabase() {
   if (connection) return connection;
   connection = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       for (const name of TABLES) {
         if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name, {keyPath: "id"});
@@ -215,5 +220,25 @@ export async function replaceData(backup) {
 }
 
 export async function makeBackup() {
-  return {format: "historylab-explicit-1", exportedAt: new Date().toISOString(), ...await loadData()};
+  const records = await loadData();
+  // Imaginile originale se includ în arhivă pentru transferul între dispozitive.
+  // Dacă o imagine lipsește, exportul e oprit, nu produce un backup aparent complet.
+  const pages = [];
+  for (const original of records.pages) {
+    const page = {...original};
+    if (!page.imageDataUri && page.imageUrl) {
+      const response = await fetch(page.imageUrl);
+      if (!response.ok) throw new Error("Nu pot arhiva fotografia paginii " + (page.pageNumber || "?"));
+      const blob = await response.blob();
+      page.imageDataUri = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+    pages.push(page);
+  }
+  return {format: "historylab-explicit-1", exportedAt: new Date().toISOString(),
+    ...records, pages};
 }

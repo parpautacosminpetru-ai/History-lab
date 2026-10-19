@@ -14,10 +14,11 @@
       <div class="brand-mark" aria-hidden="true">H<span>·</span></div>
       <div class="brand-text"><strong>HISTORYLAB</strong><small>ATLASUL EXPLICIT</small></div>
     </div>
-    <span class="privacy"><i></i> LOCAL · MANUAL · FĂRĂ AI</span>
+    <span class="privacy"><i></i> INDEXARE MANUALĂ · OCR LOCAL</span>
     <div class="header-actions">
       <button type="button" class="button flat only-wide" id="exportButton" title="Salvează arhiva JSON">↧ Export</button>
       <button type="button" class="button flat only-wide" id="importButton" title="Încarcă arhiva JSON">↥ Import</button>
+      <button type="button" class="button reader-button" id="openReader"><span aria-hidden="true">▧</span><span class="reader-button-label"> Atelier OCR</span></button>
       <button type="button" class="button primary" id="newEntryButton"><span>＋</span> Fișă nouă</button>
       <button type="button" class="button icon-button" id="moreButton" aria-label="Alte acțiuni" title="Arhivare și surse">⋯</button>
     </div>
@@ -103,10 +104,95 @@
     </aside>
 
     <button class="mobile-index-trigger" id="mobileIndex" type="button">☰ Index & căutare</button>
+
+    <!-- Atelierul suprapus păstrează rigla timpului permanent deasupra și nu mută sursele în alte foldere. -->
+    <section id="readerPanel" class="reader-panel hidden" aria-label="Atelier de lectură direct pe sursa originală">
+      <div class="reader-heading">
+        <div>
+          <div class="eyebrow">FOTOGRAFIE ORIGINALĂ · OCR OFFLINE · INDEXARE MANUALĂ</div>
+          <h2>Atelier de lectură <span id="readerStatus">Nicio pagină</span></h2>
+        </div>
+        <button id="readerClose" type="button" class="button icon-button" aria-label="Închide atelierul">×</button>
+      </div>
+      <div class="reader-context">
+        <label>Lucrare <select id="readerSource" aria-label="Alege lucrarea pentru fotografie"></select></label>
+        <label>Capitol <input id="readerChapter" placeholder="Cap. II" autocomplete="off"></label>
+        <label>Pagina <input id="readerPageNumber" placeholder="42" inputmode="text" autocomplete="off"></label>
+        <button id="readerCamera" class="button primary" type="button">◉ Fotografiere</button>
+        <button id="readerGallery" class="button outline" type="button">▧ Din galerie</button>
+        <button id="readerNextPage" class="button flat" type="button" title="Pregătește pagina următoare">Pagina +1 ↗</button>
+      </div>
+      <div class="reader-tabs">
+        <label>Pagini ale lucrării <select id="readerPageList" aria-label="Pagini scanate"></select></label>
+        <span id="readerSaveState">Fără transcriere</span>
+        <span class="reader-hint">Fotografia rămâne nemodificată. Numai transcrierea OCR poate fi corectată.</span>
+      </div>
+      <div class="reader-body">
+        <section class="reader-original">
+          <div class="reader-section-head"><strong>01 / Fotografia paginii</strong>
+            <div class="reader-photo-tools">
+              <button id="readerPhotoOut" class="button tiny-button" type="button" aria-label="Micșorează fotografia">−</button>
+              <span id="readerPhotoScale">100%</span>
+              <button id="readerPhotoIn" class="button tiny-button" type="button" aria-label="Mărește fotografia">＋</button>
+            </div>
+          </div>
+          <div class="reader-photo-scroll" id="readerPhotoScroll">
+            <div id="readerPhotoPlaceholder" class="reader-empty-photo">
+              <div class="reader-empty-icon">▧</div>
+              <strong>Începe cu pagina originală</strong>
+              <p>Fotografiază sau încarcă pagina. Textul este recunoscut automat în APK, fără internet.</p>
+            </div>
+            <img class="hidden" id="readerPhoto" alt="Imaginea originală a paginii, păstrată fără modificări" draggable="false">
+          </div>
+        </section>
+        <section class="reader-transcription">
+          <div class="reader-section-head"><strong>02 / Textul recunoscut (editabil)</strong><span id="readerOcrCount">0 caractere</span></div>
+          <textarea id="readerOcrText" spellcheck="false" placeholder="Fotografiază o pagină: OCR-ul offline introduce automat textul aici. Compară-l cu fotografia și corectează doar erorile de transcriere."></textarea>
+          <label class="reader-verification"><input id="readerVerified" type="checkbox">
+            <span>Am confruntat transcrierea cu fotografia originală; o pot folosi pentru citate exacte.</span>
+          </label>
+          <div class="reader-selection-actions">
+            <button id="readerSelect" type="button" class="button primary">↘ Preia selecția</button>
+            <span>Marchează cu degetul sau cursorul propoziția ori sintagma din text.</span>
+          </div>
+        </section>
+      </div>
+      <form id="readerQuickForm" class="reader-quick" autocomplete="off">
+        <div class="reader-quick-header">
+          <div><span class="eyebrow">03 / INDEXARE ÎNTR-O SINGURĂ OPERAȚIE</span><h3>Fișa curentă</h3></div>
+          <span id="readerIndexedCount">0 fișe din această pagină</span>
+        </div>
+        <div class="reader-quote-wrap">
+          <label>Fragment selectat (text exact, din transcrierea verificată)
+            <textarea id="readerQuote" rows="2" readonly placeholder="Selectează fragmentul de mai sus, apoi apasă «Preia selecția»."></textarea>
+          </label>
+        </div>
+        <div class="reader-quick-fields">
+          <label class="reader-field-title">Etichetă pentru regăsire <input id="readerTitle" required placeholder="Denumirea afirmației explicite"></label>
+          <label>Tip <select id="readerType"><option value="afirmatie">Afirmație</option><option value="eveniment">Eveniment</option><option value="persoana">Persoană</option><option value="teritoriu">Teritoriu</option><option value="institutie">Instituție</option><option value="periodizare">Periodizare</option></select></label>
+          <label>Indexuri tematice <input id="readerTopics" placeholder="armată, reformă, administrație"></label>
+          <label>Alți indici <input id="readerIndexes" placeholder="termen explicit, alt termen"></label>
+          <label>Actori <input id="readerPeople" placeholder="Nume explicite"></label>
+          <label>An <input id="readerYear" type="number" step="1" placeholder="Ex.: 1830"></label>
+          <label>Sfârșit interval <input id="readerYearEnd" type="number" step="1" placeholder="Opțional"></label>
+          <label>Loc <input id="readerPlace" placeholder="Menționat în sursă"></label>
+          <label>Paragraf <input id="readerParagraph" placeholder="Ex.: 2"></label>
+          <label>Propoziție <input id="readerSentence" placeholder="Ex.: 3"></label>
+          <label>Rând <input id="readerLine" placeholder="Ex.: 8–11"></label>
+          <label class="reader-field-full">Parafrază (opțională) <input id="readerParaphrase" placeholder="Dacă alegi să o introduci, numai ce este explicit"></label>
+        </div>
+        <div class="reader-quick-actions">
+          <span>Pagina și sursa se atașează automat. Fără AI pentru interpretare.</span>
+          <button class="button primary" id="readerSaveQuick" type="submit">Salvează și continuă →</button>
+        </div>
+      </form>
+    </section>
+
   </main>
 </div>
 
 <div class="action-menu hidden" id="actionMenu" role="menu">
+  <button type="button" id="menuReader">▧ Atelier de lectură OCR</button>
   <button type="button" id="menuNewSource">＋ Înregistrează sursă</button>
   <button type="button" id="menuNewRelation">↗ Relație explicită</button>
   <button type="button" id="menuExport">↧ Exportă baza (JSON)</button>
@@ -114,6 +200,7 @@
   <small>Lucrările rămân în memoria dispozitivului.</small>
 </div>
 <input type="file" id="fileImport" accept=".json,application/json" hidden>
+<input type="file" id="readerLocalPick" accept="image/jpeg,image/png,image/webp" hidden>
 
 <dialog id="editorDialog" aria-label="Editor manual">
   <div class="dialog-head">

@@ -1,3 +1,4 @@
+import {setupReader} from "./reader.js";
 import {newId, textKey, uniqueTerms, historicalToAxis, axisToHistorical,
   historicalYearLabel, dateLabel, dateAxis, matchesPeriod, findExistingPassage,
   queryEntries, loadData, putObjects, removeObject, replaceData, makeBackup} from "./model.js";
@@ -16,6 +17,7 @@ const passageOf = id => data.passages.find(p => p.id === id);
 const entryOf = id => data.entries.find(e => e.id === id);
 
 let data=empty(), world=null, tab="entries", selectedId=null, selectedSource=null;
+let reader=null;
 let currentSourceId=null, currentEntryId=null, mode=null, draftPolygon=[];
 let toastTimer, renderedDots=[], renderedTime=[];
 let timeline={center:500, span:5000}, map={lon:19, lat:46, zoom:2.2};
@@ -368,7 +370,9 @@ function openEntry(id) {
   const citations=getCites(e);
   const chunks=citations.map(({p,s},i)=>'<div class="detail-source"><strong>'+
     esc(s?.title||"Sursă indisponibilă")+'</strong><span>'+esc([s?.author,cite(p)].filter(Boolean).join(" · "))+
-    '</span><div class="detail-quote">'+htmlLines(p.quote)+'</div></div>').join("");
+    '</span><div class="detail-quote">'+htmlLines(p.quote)+'</div>'+
+    (p.pageId?'<button type="button" class="detail-related" data-photo="'+esc(p.pageId)+'">▧ Vezi fotografia paginii originale</button>':"")+
+    '</div>').join("");
   const tags=uniqueTerms([...(e.topics||[]),...(e.indexes||[]),...uniqueTerms(e.people||"")]);
   const related=data.relations.filter(r=>r.fromId===id||r.toId===id);
   openPanel('<div class="detail-kicker">'+esc(types[e.type]||e.type)+
@@ -391,6 +395,7 @@ function openEntry(id) {
   $("detailLink").onclick=()=>openRelationEditor(e.id);
   $("detailDelete").onclick=()=>deleteEntry(e.id);
   $("detailContent").querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>openEntry(el.dataset.go));
+  $("detailContent").querySelectorAll("[data-photo]").forEach(el=>el.onclick=()=>reader?.openPage(el.dataset.photo));
   if(e.lat!=null&&e.lon!=null){map.lon=Number(e.lon);map.lat=Number(e.lat);scheduleDraw();}
   renderList();
 }
@@ -442,6 +447,7 @@ async function reload(){
   renderSelects();
   if(data.sources.some(s=>s.id===oldSource))$("sourceFilter").value=oldSource;
   renderList();
+  if(reader)reader.refresh();
   if(selectedId&&!entryOf(selectedId))hideDetail();
 }
 function showDialog(kind){
@@ -692,6 +698,8 @@ async function importArchive(event){
   }catch(e){notice("Import oprit: "+e.message);}
 }
 function bind(){
+  $("openReader").onclick=()=>reader?.show();
+  $("menuReader").onclick=()=>{closeMenu();reader?.show();};
   $("newEntryButton").onclick=()=>openEntryEditor();
   $("newSourceButton").onclick=()=>openSourceEditor();
   $("menuNewSource").onclick=()=>openSourceEditor();
@@ -754,8 +762,10 @@ function bind(){
 }
 async function initialize(){
   bind();resize();
+  reader=setupReader({getData:()=>data,onDataChanged:()=>reload(),
+    notice,openSourceEditor:()=>openSourceEditor(),openEntry:id=>openEntry(id)});
   try{
-    data=await loadData();renderSelects();renderList();
+    data=await loadData();renderSelects();renderList();reader.refresh();
   }catch(e){notice("Stocarea locală nu este disponibilă: "+e.message);}
   try{
     const response=await fetch("./world.geojson");
