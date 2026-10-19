@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#131c23">
+  <title>HistoryLab — Atlasul explicit</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">H<span>·</span></div>
+      <div class="brand-text"><strong>HISTORYLAB</strong><small>ATLASUL EXPLICIT</small></div>
+    </div>
+    <span class="privacy"><i></i> LOCAL · MANUAL · FĂRĂ AI</span>
+    <div class="header-actions">
+      <button type="button" class="button flat only-wide" id="exportButton" title="Salvează arhiva JSON">↧ Export</button>
+      <button type="button" class="button flat only-wide" id="importButton" title="Încarcă arhiva JSON">↥ Import</button>
+      <button type="button" class="button primary" id="newEntryButton"><span>＋</span> Fișă nouă</button>
+      <button type="button" class="button icon-button" id="moreButton" aria-label="Alte acțiuni" title="Arhivare și surse">⋯</button>
+    </div>
+  </header>
+
+  <section class="timeline" aria-label="Rigla cronologică permanentă">
+    <div class="timeline-caption">
+      <div class="timeline-title">
+        <span class="eyebrow">AXA TIMPULUI</span>
+        <strong id="rangeLabel">—</strong>
+        <span id="axisHint" class="tiny">Derulează sau mărește scara</span>
+      </div>
+      <div class="timeline-controls">
+        <button class="button tiny-button" id="timeBack" title="Mai devreme" aria-label="Mai devreme">←</button>
+        <button class="button tiny-button" id="timeOut" title="Depărtează" aria-label="Depărtează pe axa timpului">−</button>
+        <span id="timeScale">—</span>
+        <button class="button tiny-button" id="timeIn" title="Apropie" aria-label="Apropie pe axa timpului">＋</button>
+        <button class="button tiny-button" id="timeForward" title="Mai târziu" aria-label="Mai târziu">→</button>
+      </div>
+    </div>
+    <div class="ruler-wrap"><canvas id="timeCanvas" aria-label="Cronologie interactivă; trage pentru a naviga"></canvas></div>
+    <div class="timeline-note"><span id="periodNote">Periodizările apar numai dacă sunt adăugate dintr-o sursă.</span><label class="switch"><input id="timeOnly" type="checkbox" checked><span>Filtrează după timp</span></label></div>
+  </section>
+
+  <main id="workspace" class="workspace">
+    <canvas id="mapCanvas" class="map-canvas" aria-label="Hartă geografică interactivă offline"></canvas>
+    <div class="map-soft-grid" aria-hidden="true"></div>
+
+    <aside class="library-panel" id="libraryPanel" aria-label="Căutare și indexuri">
+      <div class="panel-heading">
+        <div><span class="eyebrow">BAZA DOCUMENTARĂ</span><h2>Index universal</h2></div>
+        <button type="button" id="toggleLibrary" class="button icon-button" aria-label="Restrânge indexul">≡</button>
+      </div>
+      <div class="search-wrap">
+        <span aria-hidden="true" class="search-icon">⌕</span>
+        <input id="searchInput" type="search" placeholder="Caută în orice sursă, fragment, temă…" aria-label="Căutare universală" autocomplete="off">
+      </div>
+      <div class="panel-tabs" role="tablist" aria-label="Conținut">
+        <button type="button" class="active" data-tab="entries">Fișe <span id="entryCount">0</span></button>
+        <button type="button" data-tab="sources">Surse <span id="sourceCount">0</span></button>
+        <button type="button" data-tab="relations">Relații <span id="relationCount">0</span></button>
+      </div>
+      <div id="entryFilters" class="filters">
+        <label class="sr-only" for="typeFilter">Tipul fișei</label>
+        <select id="typeFilter" aria-label="Tipul fișei">
+          <option value="all">Toate tipurile</option>
+          <option value="eveniment">Evenimente</option>
+          <option value="afirmatie">Afirmații</option>
+          <option value="persoana">Persoane / genealogii</option>
+          <option value="teritoriu">Teritorii</option>
+          <option value="institutie">Instituții</option>
+          <option value="periodizare">Periodizări</option>
+        </select>
+        <select id="sourceFilter" aria-label="Filtru după sursă"><option value="all">Orice sursă</option></select>
+        <select id="sortFilter" aria-label="Ordinea de parcurgere">
+          <option value="time">Ordine cronologică</option>
+          <option value="source">Ordinea autorului / paginii</option>
+        </select>
+      </div>
+      <div id="libraryList" class="library-list" aria-live="polite"></div>
+      <div class="panel-bottom">
+        <span id="filterStatus">Nicio fișă încă</span>
+        <button id="newSourceButton" type="button" class="text-button">＋ Sursă</button>
+      </div>
+    </aside>
+
+    <div class="map-status">
+      <span class="map-icon">⌖</span><span id="mapState">Hartă de referință contemporană · offline</span>
+    </div>
+    <div class="map-controls" aria-label="Comenzi pentru hartă">
+      <button type="button" id="mapZoomIn" title="Apropie harta" aria-label="Apropie harta">＋</button>
+      <button type="button" id="mapZoomOut" title="Depărtează harta" aria-label="Depărtează harta">−</button>
+      <span></span>
+      <button type="button" id="mapEurope" title="Europa" aria-label="Centrare pe Europa">EU</button>
+      <button type="button" id="mapWorld" title="Întreaga lume" aria-label="Vedere globală">◎</button>
+    </div>
+    <div id="drawBar" class="draw-bar hidden"><strong>Desenează conturul</strong><span>Apasă pe hartă pentru fiecare punct. Numai din sursă.</span><button id="finishPolygon" class="button primary" type="button">Încheie conturul</button><button id="cancelPolygon" class="button flat" type="button">Anulează</button></div>
+    <div class="map-legend"><span><i class="legend-dot"></i> Informație explicită</span><span><i class="legend-line"></i> Relație documentată</span></div>
+
+    <aside id="detailPanel" class="detail-panel hidden" aria-label="Detaliu documentar">
+      <button type="button" class="detail-close" id="detailClose" aria-label="Închide fișa">×</button>
+      <div id="detailContent"></div>
+    </aside>
+
+    <button class="mobile-index-trigger" id="mobileIndex" type="button">☰ Index & căutare</button>
+  </main>
+</div>
+
+<div class="action-menu hidden" id="actionMenu" role="menu">
+  <button type="button" id="menuNewSource">＋ Înregistrează sursă</button>
+  <button type="button" id="menuNewRelation">↗ Relație explicită</button>
+  <button type="button" id="menuExport">↧ Exportă baza (JSON)</button>
+  <button type="button" id="menuImport">↥ Importă baza (JSON)</button>
+  <small>Lucrările rămân în memoria dispozitivului.</small>
+</div>
+<input type="file" id="fileImport" accept=".json,application/json" hidden>
+
+<dialog id="editorDialog" aria-label="Editor manual">
+  <div class="dialog-head">
+    <div><span class="eyebrow">INTRODUCERE MANUALĂ · O SINGURĂ ÎNREGISTRARE</span><h2 id="dialogTitle">Fișă nouă</h2></div>
+    <button type="button" id="dialogClose" class="button icon-button" aria-label="Închide">×</button>
+  </div>
+
+  <form id="sourceForm" class="editor-form hidden">
+    <div class="form-row"><label>Titlul lucrării <em>*</em><input name="title" required placeholder="Titlul exact al sursei"></label></div>
+    <div class="form-two"><label>Autor <input name="author" placeholder="Nume complet"></label><label>Specializare / domeniu <input name="speciality" placeholder="Ex.: medievistică"></label></div>
+    <div class="form-two"><label>Anul publicării <input name="publication" placeholder="Ex.: 1998"></label><label>Ediție / volum <input name="edition" placeholder="Ex.: vol. II, ed. 3"></label></div>
+    <label>Referință bibliografică completă<textarea name="bibliography" rows="2" placeholder="Editură, loc, ISBN sau alte identificatoare"></textarea></label>
+    <p class="form-guidance">Datele bibliografice sunt păstrate o singură dată și reutilizate de toate fragmentele acelei lucrări.</p>
+    <div class="form-actions"><button class="button primary" type="submit">Salvează sursa</button></div>
+  </form>
+
+  <form id="entryForm" class="editor-form hidden">
+    <p class="form-guidance">O fișă canonică poate avea mai multe trimiteri și oricâte indexuri. Completează numai ceea ce este explicit în sursă; parafraza este opțională.</p>
+    <div class="section-heading">01 / Informația</div>
+    <label>Denumire pentru regăsire <em>*</em><input name="title" required placeholder="Ce afirmă explicit fragmentul?"></label>
+    <div class="form-two">
+      <label>Tipul informației<select name="type">
+        <option value="eveniment">Eveniment</option><option value="afirmatie">Afirmație</option>
+        <option value="persoana">Persoană / genealogie</option><option value="teritoriu">Teritoriu</option>
+        <option value="institutie">Instituție</option><option value="periodizare">Periodizare documentată</option>
+      </select></label>
+      <label>Loc menționat<input name="place" placeholder="Ex.: Dacia, Roma"></label>
+    </div>
+    <div class="form-two"><label>Actori / persoane<input name="people" placeholder="Separă prin virgule"></label><label>Teme<input name="topics" placeholder="Separă prin virgule"></label></div>
+    <label>Alți indici semantici expliciți<input name="indexes" placeholder="Ex.: reformă, instituție militară, cauză enunțată"></label>
+    <label>Parafrază fidelă, opțională<textarea name="paraphrase" rows="2" placeholder="Fără inferențe sau completări externe"></textarea></label>
+
+    <div class="section-heading">02 / Timpul și spațiul</div>
+    <div class="form-two"><label>An început<input name="yearStart" type="number" step="1" placeholder="-44 = 44 î.Hr."></label><label>An sfârșit<input name="yearEnd" type="number" step="1" placeholder="Pentru intervale"></label></div>
+    <div class="form-three"><label>Lună<input name="month" type="number" min="1" max="12" placeholder="1–12"></label><label>Zi<input name="day" type="number" min="1" max="31" placeholder="1–31"></label><label>Data cum apare în sursă<input name="dateText" placeholder="Ex.: 15 martie 44 î.Hr."></label></div>
+    <p class="form-hint">Anii anteriori erei noastre sunt negativi (−1 = 1 î.Hr.); anul 0 nu se folosește. Pentru date disputate, păstrează formularea originală.</p>
+    <div class="form-two"><label>Latitudine<input name="lat" type="number" step="any" min="-90" max="90" placeholder="41.9"></label><label>Longitudine<input name="lon" type="number" step="any" min="-180" max="180" placeholder="12.5"></label></div>
+    <div class="inline-actions"><button id="pickPoint" class="button outline" type="button">⌖ Alege punct pe hartă</button><button id="startPolygon" class="button outline" type="button">⬡ Desenează contur pe hartă</button></div>
+    <label>Contur geografic documentat (longitudine,latitudine; …)<textarea id="geometryInput" name="geometry" rows="2" placeholder="Ex.: 20,45; 21,46; 23,45"></textarea></label>
+    <p class="form-hint">Harta este un reper geografic actual. Punctele și contururile istorice se introduc manual, numai dacă sunt susținute de surse.</p>
+
+    <div class="section-heading">03 / Dovada textuală și locul exact</div>
+    <label>Folosește un fragment deja înregistrat<select id="existingPassage" name="existingPassage"><option value="">— Fragment nou —</option></select></label>
+    <div id="currentEvidence" class="evidence-summary hidden"></div>
+    <div id="newPassageFields">
+      <label>Sursa <em>*</em><select name="sourceId" id="entrySource"></select></label>
+      <div class="form-three"><label>Capitol / secțiune<input name="chapter" placeholder="Cap. II"></label><label>Pagina de la<input name="pageStart" placeholder="42"></label><label>Până la pagina<input name="pageEnd" placeholder="44"></label></div>
+      <div class="form-three"><label>Paragraf<input name="paragraph" placeholder="2"></label><label>Propoziție<input name="sentence" placeholder="3"></label><label>Rând / interval<input name="line" placeholder="8–11"></label></div>
+      <label>Text exact din sursă <em>*</em><textarea name="quote" id="quoteInput" rows="4" placeholder="Transcrie fidel fragmentul original, cu punctuație și formulări exacte"></textarea></label>
+    </div>
+    <div class="form-actions"><button type="button" class="button flat" id="cancelEditor">Renunță</button><button type="submit" class="button primary" id="saveEntry">Salvează fișa și indexurile</button></div>
+  </form>
+
+  <form id="relationForm" class="editor-form hidden">
+    <p class="form-guidance">Relațiile între fragmente îndepărtate se înregistrează numai când legătura este explicit susținută textual. Nu se deduc cauze, identități sau conexiuni.</p>
+    <label>Fișa de plecare<select id="relationFrom" name="fromId" required></select></label>
+    <label>Tipul legăturii explicite<input name="kind" required placeholder="Ex.: autorul afirmă că X a determinat Y"></label>
+    <label>Fișa legată<select id="relationTo" name="toId" required></select></label>
+    <label>Fragmentul care afirmă această relație <em>*</em><select id="relationEvidence" name="passageId" required></select></label>
+    <div class="form-actions"><button type="button" class="button flat" id="cancelRelation">Renunță</button><button type="submit" class="button primary">Salvează relația documentată</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,11 +1,9 @@
-.gradle/
-build/
-app/build/
-local.properties
-.idea/
+/.gradle/
+/build/
+/app/build/
 *.iml
+.idea/
+local.properties
 .DS_Store
-app/src/main/assets/tessdata/*.traineddata
-
-# GitHub Actions token can publish source but cannot create new workflows.
-/.github/workflows/android-apk.yml
+node_modules/
+*.apk
