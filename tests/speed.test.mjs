@@ -57,7 +57,7 @@ test("paleta nu inventează indici, ci citește exclusiv opțiunile istoricului"
     {updatedAt:"2026-09-01",topics:["administrație"],indexes:["reformă"]}
   ];
   assert.deepEqual(indexPalette(xs).map(x=>x.kind+":"+x.name),
-    ["topic:armată","index:armată","index:reformă","topic:administrație"]);
+    ["index:reformă","topic:armată","index:armată","topic:administrație"]);
   assert.equal(appendChosenTag("armată; Reformă","reformă"),"armată, Reformă");
   assert.equal(appendChosenTag("armată","administrație"),"armată, administrație");
 });
