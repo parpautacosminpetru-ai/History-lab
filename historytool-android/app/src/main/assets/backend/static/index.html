@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>historytool — Index universal și laborator de cercetare</title>
+<meta name="description" content="Instrument local de indexare și cercetare a surselor istorice, cu trimiteri la original și interogare documentată.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%231c467c'/%3E%3Cpath d='M8 10q6-3 12 2q6-5 12-2v21q-6-3-12 2q-6-5-12-2z' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-symbol"><svg viewBox="0 0 32 32" width="29" height="29" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 5c5-2 10-1 13 2 3-3 8-4 13-2v21c-5-2-10-1-13 2-3-3-8-4-13-2V5z"/><path d="M16 7v21"/></svg></span><span><strong>historytool</strong><small>Surse. Dovezi. Cercetare.</small></span></div>
+    <nav class="topnav" aria-label="Interfețe principale">
+      <button data-act="tab" data-tab="index" class="navbtn active"><span class="navnumber">01</span> Index universal</button>
+      <button data-act="tab" data-tab="search" class="navbtn"><span class="navnumber">02</span> Interogare</button>
+      <button data-act="tab" data-tab="lab" class="navbtn"><span class="navnumber">03</span> Laborator</button>
+    </nav>
+    <div class="topright"><span class="online-dot"></span><span class="local-label">Spațiu local</span><button class="iconbtn" data-act="help" title="Despre precizia indexului">?</button></div>
+  </header>
+  <main id="main-content"><section class="boot"><span class="loader"></span> Se inițializează baza de date locală…</section></main>
+  <div id="viewer" class="modal-cover hidden" role="dialog" aria-modal="true" aria-labelledby="viewer-title"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="upload-files" multiple hidden accept=".pdf,.txt,.md,.docx,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg">
+</div>
+</body>
+</html>

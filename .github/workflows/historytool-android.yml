@@ -1,0 +1,127 @@
+name: historytool — Android APK
+on:
+  push:
+    branches: [feature/historytool-1.0.1]
+    paths:
+      - 'historytool-android/**'
+      - '.github/workflows/historytool-android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Python 3.11 for Android Python build
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare Android SDK 35
+        run: |
+          set -euxo pipefail
+          SDKMANAGER="$(command -v sdkmanager || find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compile historytool APK
+        working-directory: historytool-android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK
+        working-directory: historytool-android
+        run: |
+          set -euo pipefail
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+      - name: Publish APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: historytool-1.0.3-android-installer
+          path: historytool-android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+  emulator_smoke:
+    name: Launch and index on Android emulator
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: historytool-1.0.3-android-installer
+          path: android-test-apk
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run offline app in emulator and test API
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: bash historytool-android/scripts/emulator-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: historytool-android-emulator-proof
+          path: |
+            historytool-emulator.png
+            historytool-emulator-tree.xml
+            historytool-emulator-log.txt
+          if-no-files-found: ignore
+          retention-days: 14
+  publish_release:
+    name: Publish APK for direct installation
+    needs: [apk, emulator_smoke]
+    if: ${{ github.ref == 'refs/heads/feature/historytool-1.0.1' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested APK
+        uses: actions/download-artifact@v4
+        with:
+          name: historytool-1.0.3-android-installer
+          path: verified-apk
+      - name: Verify Android package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s verified-apk/app-debug.apk
+          unzip -t verified-apk/app-debug.apk >/dev/null
+          unzip -p verified-apk/app-debug.apk AndroidManifest.xml >/dev/null
+          cp verified-apk/app-debug.apk historytool-1.0.3.apk
+          sha256sum historytool-1.0.3.apk
+      - name: Publish direct APK download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.0.3-android --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release upload v1.0.3-android historytool-1.0.3.apk --clobber --repo "$GH_REPO"
+          else
+            gh release create v1.0.3-android historytool-1.0.3.apk \
+              --repo "$GH_REPO" \
+              --target "$GITHUB_SHA" \
+              --title "historytool 1.0.3 - APK Android" \
+              --notes "Descărcare directă APK historytool. Construit prin GitHub Actions; testele pe emulator verifică pornirea interfeței, importul, indexarea, căutarea, OCR-ul și persistența datelor. Este un build de test semnat pentru instalare, nu o versiune certificată pentru cercetare academică. Suportă dispozitive Android 64-bit." \
+              --latest=false
+          fi
+          gh release view v1.0.3-android --repo "$GH_REPO" --json url,assets
