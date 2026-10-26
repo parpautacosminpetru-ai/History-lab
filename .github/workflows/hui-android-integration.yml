@@ -34,6 +34,8 @@ jobs:
           file=Path('hui/app/android/app/src/main/AndroidManifest.xml')
           tree=ET.parse(file)
           android='{http://schemas.android.com/apk/res/android}'
+          ET.register_namespace('android','http://schemas.android.com/apk/res/android')
+          ET.register_namespace('tools','http://schemas.android.com/tools')
           for item in list(tree.getroot().findall('uses-permission')):
               tree.getroot().remove(item)
           ET.SubElement(tree.getroot(),'uses-permission',{android+'name':'android.permission.INTERNET'})

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from importlib.resources import files
 import json
+import re
 from pathlib import Path, PurePosixPath
 import shutil
 import sqlite3
@@ -20,7 +21,7 @@ MAX_BYTES = 2 * 1024**3
 
 
 def safe_path(name: str) -> str:
-    if not name or '\\' in name or ':' in name or '\x00' in name or name.startswith('/'):
+    if not re.fullmatch(r'[A-Za-z0-9/_.-]+',name) or name.startswith('/'):
         raise ValueError('Unsafe package path')
     path = PurePosixPath(name)
     if any(p in ('','.','..') for p in name.split('/')) or str(path)!=name:
@@ -92,12 +93,15 @@ def export_package(db, workspace: Path, output: Path, *, include_originals=False
                 manifest = {'format':'hui','format_version':1,'schema_version':SCHEMA_VERSION,
                             'index_version':version,'includes_originals':include_originals,
                             'files':{name:{'sha256':sha256(path),'size':path.stat().st_size} for name,path in sorted(paths.items())}}
+                encoded_manifest=json.dumps(manifest,ensure_ascii=False,sort_keys=True,indent=2)
+                if len(encoded_manifest.encode('utf-8'))>4*1024**2:
+                    raise ValueError('Manifest exceeds HUI v1 safety limits')
                 if len(paths)+1>MAX_FILES or sum(p.stat().st_size for p in paths.values())>MAX_BYTES:
                     raise ValueError('Package exceeds HUI v1 safety limits')
                 with zipfile.ZipFile(temp_output,'w',compression=zipfile.ZIP_STORED,allowZip64=True) as archive:
                     for name,path in sorted(paths.items()):
                         archive.write(path,name)
-                    archive.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,sort_keys=True,indent=2))
+                    archive.writestr('manifest.json',encoded_manifest)
             finally:
                 snapshot.close()
         temp_output.replace(output)

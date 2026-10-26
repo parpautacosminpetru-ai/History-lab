@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:hui_reader/database/catalog.dart';
 import 'package:hui_reader/services/packages.dart';
 import 'package:hui_reader/services/query.dart';
@@ -22,6 +23,7 @@ void main() {
     final directory=await store.importFile(File('test/fixtures/demo.hui'));
     final catalog=Catalog(directory,normalization);
     try {
+      validateCatalog('${directory.path}/catalog.sqlite',schema.replaceAll('\n','\r\n'));
       final vectors=jsonDecode(File('test/fixtures/queries.json').readAsStringSync()) as List;
       for(final vector in vectors) {
         final q=vector['query'] as Map<String,dynamic>;
@@ -60,5 +62,13 @@ void main() {
       expect(()=>safePackagePath(path),throwsFormatException);
     }
     expect(()=>checkZip(Uint8List(22)),throwsFormatException);
+  });
+  test('Imported catalogs revalidate intervals after an untrusted database edit',() async {
+    final root=await store.importFile(File('test/fixtures/demo.hui'));
+    final path='${root.path}/catalog.sqlite';
+    final editable=sqlite3.open(path);
+    try { editable.execute('UPDATE SpanParts SET end_offset=999999'); }
+    finally { editable.dispose(); }
+    expect(()=>validateCatalog(path,schema),throwsFormatException);
   });
 }

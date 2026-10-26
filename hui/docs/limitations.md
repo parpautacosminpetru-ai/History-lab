@@ -23,8 +23,8 @@ Niciun procent de pagini procesate nu se prezintă drept exhaustivitate semantic
 
 ## Sarcini independente pentru următoarea iterație
 
-1. Structuri și OCR: adnotări de paragraf/propoziție, editor versionat și realiniere, corpus cu coloane multiple și scanări degradate.
-2. Semantica explicită: benchmark multilingv de negație/modalitate/atribuire, validare umană comparată și furnizori reali opționali.
-3. Reader și atelier: editor de validare Windows mai complet, comparație între dovezi, criterii matriceale și accesibilitate.
-4. Pachete și scară: streaming, limite măsurate pe dispozitive Android, delta-uri și politici de backup/migrare.
-5. Distribuție: verificare pe dispozitive fizice, semnare stabilă, instalator și auditul dependențelor înainte de producție.
+1. [Structuri și OCR — #3](https://github.com/parpautacosminpetru-ai/History-lab/issues/3): adnotări de paragraf/propoziție, editor versionat și realiniere, corpus cu coloane multiple și scanări degradate.
+2. [Semantica explicită — #4](https://github.com/parpautacosminpetru-ai/History-lab/issues/4): benchmark multilingv de negație/modalitate/atribuire, validare umană comparată și furnizori reali opționali.
+3. [Reader și atelier — #5](https://github.com/parpautacosminpetru-ai/History-lab/issues/5): editor de validare Windows mai complet, comparație între dovezi, criterii matriceale și accesibilitate.
+4. [Pachete și scară — #6](https://github.com/parpautacosminpetru-ai/History-lab/issues/6): streaming, limite măsurate pe dispozitive Android, delta-uri și politici de backup/migrare.
+5. [Distribuție — #7](https://github.com/parpautacosminpetru-ai/History-lab/issues/7): verificare pe dispozitive fizice, semnare stabilă, instalator și auditul dependențelor înainte de producție.

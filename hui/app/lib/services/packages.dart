@@ -70,7 +70,7 @@ void validateCatalog(String path, String schema) {
   try {
     db.execute('PRAGMA trusted_schema=OFF');
     db.execute('PRAGMA query_only=ON');
-    reference.execute(schema);
+    reference.execute(schema.replaceAll('\r\n','\n'));
     const sql="SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name";
     List<List<Object?>> fingerprint(Database d) => d.select(sql).map((row)=>row.values.toList()).toList();
     if (db.select('PRAGMA user_version').single.values.single!=1 ||
@@ -86,6 +86,31 @@ void validateCatalog(String path, String schema) {
       WHERE sp.start_offset<0 OR sp.end_offset>length(t.original_text) OR sp.end_offset<=sp.start_offset OR es.edition_id!=pg.edition_id LIMIT 1''').isNotEmpty ||
         db.select("SELECT id FROM SourceEditions WHERE status!='ready' LIMIT 1").isNotEmpty) {
       throw const FormatException('Intervale sau documente incomplete');
+    }
+    const checks=[
+      '''SELECT 1 FROM SpanParts WHERE typeof(start_offset)!='integer' OR typeof(end_offset)!='integer' LIMIT 1''',
+      '''SELECT 1 FROM EvidenceSpans es WHERE NOT EXISTS(SELECT 1 FROM SpanParts sp WHERE sp.span_id=es.id) LIMIT 1''',
+      '''SELECT 1 FROM TextSegments t JOIN Pages pg ON pg.id=t.page_id WHERE t.start_offset<0
+        OR t.end_offset>length(pg.raw_text) OR t.end_offset<=t.start_offset
+        OR t.original_text!=substr(pg.raw_text,t.start_offset+1,t.end_offset-t.start_offset) LIMIT 1''',
+      '''SELECT 1 FROM TextBoxes b JOIN TextSegments t ON t.id=b.segment_id
+        WHERE b.start_offset<0 OR b.end_offset>length(t.original_text) OR b.end_offset<=b.start_offset LIMIT 1''',
+      '''SELECT 1 FROM RelationEvidence re JOIN ExplicitRelations er ON er.id=re.relation_id
+        JOIN Occurrences so ON so.id=re.subject_occurrence_id JOIN Occurrences oo ON oo.id=re.object_occurrence_id
+        WHERE so.node_id!=er.subject_id OR oo.node_id!=er.object_id LIMIT 1''',
+      '''SELECT 1 FROM Occurrences o WHERE o.original_form!=(SELECT group_concat(piece,char(10)) FROM (
+        SELECT substr(t.original_text,sp.start_offset+1,sp.end_offset-sp.start_offset) AS piece
+        FROM SpanParts sp JOIN TextSegments t ON t.id=sp.segment_id WHERE sp.span_id=o.span_id ORDER BY sp.position)) LIMIT 1''',
+      '''SELECT 1 FROM RelationEvidence re JOIN Occurrences o ON o.id=re.subject_occurrence_id OR o.id=re.object_occurrence_id
+        JOIN SpanParts endpoint ON endpoint.span_id=o.span_id WHERE NOT EXISTS(
+        SELECT 1 FROM SpanParts support WHERE support.span_id=re.span_id AND support.segment_id=endpoint.segment_id
+        AND support.start_offset<=endpoint.start_offset AND support.end_offset>=endpoint.end_offset) LIMIT 1''',
+      '''SELECT 1 FROM NodeVariants nv WHERE nv.justification_span_id IS NULL OR instr((SELECT group_concat(piece,char(10)) FROM (
+        SELECT substr(t.original_text,sp.start_offset+1,sp.end_offset-sp.start_offset) AS piece
+        FROM SpanParts sp JOIN TextSegments t ON t.id=sp.segment_id WHERE sp.span_id=nv.justification_span_id ORDER BY sp.position)),nv.original_form)=0 LIMIT 1''',
+    ];
+    for(final sql in checks) {
+      if(db.select(sql).isNotEmpty)throw const FormatException('Dovezi, citate sau capete de relație inconsistente');
     }
     for (final row in db.select('SELECT original_path FROM SourceEditions')) { safePackagePath(row['original_path'] as String); }
     for (final row in db.select('SELECT image_path FROM Pages WHERE image_path IS NOT NULL')) { safePackagePath(row['image_path'] as String); }

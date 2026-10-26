@@ -153,6 +153,24 @@ def review(db, decisions: list[dict], *, reviewer: str, note: str = ''):
 def validate(db) -> list[str]:
     integrity(db)
     problems = []
+    checks = {
+        'Evidence interval outside source text or edition': '''SELECT 1 FROM SpanParts sp JOIN TextSegments t ON t.id=sp.segment_id
+          JOIN Pages p ON p.id=t.page_id JOIN EvidenceSpans es ON es.id=sp.span_id
+          WHERE typeof(sp.start_offset)!='integer' OR typeof(sp.end_offset)!='integer'
+          OR sp.start_offset<0 OR sp.end_offset>length(t.original_text) OR sp.end_offset<=sp.start_offset
+          OR es.edition_id!=p.edition_id LIMIT 1''',
+        'Segment differs from immutable page text': '''SELECT 1 FROM TextSegments t JOIN Pages p ON p.id=t.page_id
+          WHERE t.start_offset<0 OR t.end_offset>length(p.raw_text) OR t.end_offset<=t.start_offset
+          OR t.original_text!=substr(p.raw_text,t.start_offset+1,t.end_offset-t.start_offset) LIMIT 1''',
+        'Visual box outside source segment': '''SELECT 1 FROM TextBoxes b JOIN TextSegments t ON t.id=b.segment_id
+          WHERE b.start_offset<0 OR b.end_offset>length(t.original_text) OR b.end_offset<=b.start_offset LIMIT 1''',
+        'Relation endpoints differ from canonical identities': '''SELECT 1 FROM RelationEvidence re
+          JOIN ExplicitRelations er ON er.id=re.relation_id JOIN Occurrences so ON so.id=re.subject_occurrence_id
+          JOIN Occurrences oo ON oo.id=re.object_occurrence_id
+          WHERE so.node_id!=er.subject_id OR oo.node_id!=er.object_id LIMIT 1''',
+    }
+    for message,sql in checks.items():
+        if db.execute(sql).fetchone():problems.append(message)
     for span in db.execute('SELECT id FROM EvidenceSpans'):
         try:
             span_text(db,span['id'])
@@ -161,6 +179,9 @@ def validate(db) -> list[str]:
     for occurrence in db.execute('SELECT * FROM Occurrences'):
         if occurrence['original_form'] != span_text(db,occurrence['span_id']):
             problems.append('Occurrence quote mismatch: '+occurrence['id'])
+    for variant in db.execute('SELECT * FROM NodeVariants'):
+        if not variant['justification_span_id'] or variant['original_form'] not in span_text(db,variant['justification_span_id']):
+            problems.append('Lexical variant without literal evidence: '+variant['id'])
     for row in db.execute('SELECT * FROM RelationEvidence'):
         for column in ('subject_occurrence_id','object_occurrence_id'):
             occurrence = db.execute('SELECT span_id FROM Occurrences WHERE id=?',(row[column],)).fetchone()
