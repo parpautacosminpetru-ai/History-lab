@@ -69,6 +69,8 @@ flutter build apk --debug
 
 Build-urile se verifică și în Actions: **HUI Windows Reader**, **HUI Android APK**, **HUI Flutter analyze and tests**. APK-ul de test și întregul director Windows se descarcă din artefactele unei rulări reușite. Nu instala doar fișierul `.exe` fără DLL-urile și datele care îl însoțesc.
 
+Artefacte compilate și verificate pentru prototipul 0.1: [Windows](https://github.com/parpautacosminpetru-ai/History-lab/actions/runs/40321640066/artifacts/12649207979) și [APK Android debug](https://github.com/parpautacosminpetru-ai/History-lab/actions/runs/40321640269/artifacts/12648783944). [Raportul](docs/test_report.md) identifică exact codul, testele și hash-urile arhivelor.
+
 ## Testare
 
 ```powershell
