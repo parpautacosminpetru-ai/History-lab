@@ -116,9 +116,11 @@ SqlQuery buildQuery(Query q, TextNormalizer normalize) {
   String atom(String term) {
     if (q.mode == 'text') {
       params.add('"${term.replaceAll('"', '""')}"');
-      return '''EXISTS(SELECT 1 FROM SegmentFTS JOIN TextSegments ts ON ts.rowid=SegmentFTS.rowid
+      final outerKey={'passage':'t.rowid','context':'t.structure_id','source':'e.source_id'}[q.scope];
+      final innerKey={'passage':'ts.rowid','context':'ts.structure_id','source':'ee.source_id'}[q.scope];
+      return '''$outerKey IN (SELECT $innerKey FROM SegmentFTS JOIN TextSegments ts ON ts.rowid=SegmentFTS.rowid
         JOIN Pages pp ON pp.id=ts.page_id JOIN SourceEditions ee ON ee.id=pp.edition_id
-        WHERE $scope AND SegmentFTS MATCH ?)''';
+        WHERE SegmentFTS MATCH ?)''';
     }
     params.addAll([...q.statuses, ...q.statuses]);
     final matching = nodeMatch(term, 'n');

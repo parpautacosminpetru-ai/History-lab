@@ -1,13 +1,16 @@
 """Reproducible Flutter platform scaffolding; preserve the existing HistoryLab app."""
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import xml.etree.ElementTree as ET
 
 root=Path(__file__).resolve().parents[1]/'app'
 default_test=root/'test/widget_test.dart'
 had_default_test=default_test.exists()
-subprocess.run(['flutter','create','--no-pub','--platforms=windows,android','--org','ro.hui',
+flutter=shutil.which('flutter')
+if not flutter:raise SystemExit('Flutter SDK is not on PATH')
+subprocess.run([flutter,'create','--no-pub','--platforms=windows,android','--org','ro.hui',
                 '--project-name','hui_reader',str(root)],check=True)
 if not had_default_test and default_test.exists() and 'MyApp' in default_test.read_text():
     default_test.unlink()  # Generated counter test does not belong to this application.

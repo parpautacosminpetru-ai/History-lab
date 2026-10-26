@@ -128,9 +128,12 @@ def build_sql(query: Query) -> tuple[str,list]:
         if query.mode=='text':
             # Literal FTS phrase, never interpolate untrusted FTS/SQL operators.
             params.append('"'+term.replace('"','""')+'"')
-            return f'''EXISTS(SELECT 1 FROM SegmentFTS JOIN TextSegments ts ON ts.rowid=SegmentFTS.rowid
+            outer_key,inner_key = {'passage':('t.rowid','ts.rowid'),
+                                   'context':('t.structure_id','ts.structure_id'),
+                                   'source':('e.source_id','ee.source_id')}[query.scope]
+            return f'''{outer_key} IN (SELECT {inner_key} FROM SegmentFTS JOIN TextSegments ts ON ts.rowid=SegmentFTS.rowid
               JOIN Pages pp ON pp.id=ts.page_id JOIN SourceEditions ee ON ee.id=pp.edition_id
-              WHERE {scope} AND SegmentFTS MATCH ?)'''
+              WHERE SegmentFTS MATCH ?)'''
         params.extend(query.statuses)
         params.extend(query.statuses)
         matching = node_match(term)
