@@ -32,7 +32,7 @@ Set<String> checkZip(Uint8List bytes) {
     throw const FormatException('ZIP multipart/ZIP64 neacceptat');
   }
   var offset = u32(end+16), total = 0;
-  final centralEnd = offset+u32(end+12), names = <String>{};
+  final centralEnd = offset+u32(end+12), names = <String>{}, portableNames=<String>{};
   if (centralEnd != end) throw const FormatException('Director ZIP invalid');
   for (var i=0; i<u16(end+10); i++) {
     if (offset+46>centralEnd || u32(offset)!=0x02014b50) throw const FormatException('Intrare ZIP invalidă');
@@ -43,7 +43,7 @@ Set<String> checkZip(Uint8List bytes) {
     }
     final name=safePackagePath(utf8.decode(bytes.sublist(offset+46,offset+46+nameLength)));
     final mode = u32(offset+38)>>16, kind=mode & 0xf000;
-    if (!names.add(name) || ![0,0x8000].contains(kind)) throw const FormatException('Duplicat sau legătură simbolică');
+    if (!names.add(name) || !portableNames.add(name.toLowerCase()) || ![0,0x8000].contains(kind)) throw const FormatException('Duplicat sau legătură simbolică');
     final local=u32(offset+42);
     if (local+30>u32(end+16) || u32(local)!=0x04034b50 || u16(local+6)!=flags || u16(local+8)!=method) {
       throw const FormatException('Antet ZIP local invalid');

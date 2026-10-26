@@ -1,4 +1,6 @@
 import stat
+import hashlib
+import json
 import zipfile
 from pathlib import Path
 
@@ -55,3 +57,20 @@ def test_failed_install_after_backup_restores_existing_workspace(corpus,tmp_path
     monkeypatch.setattr(Path,'rename',fail_install)
     with pytest.raises(OSError):import_package(package,target)
     assert (target/'catalog.sqlite').read_bytes()==before
+
+
+def test_case_collisions_cannot_alias_files_on_windows(corpus,tmp_path):
+    db,workspace,*_=corpus
+    publish(db,'QA')
+    original=tmp_path/'valid.hui'
+    export_package(db,workspace,original,include_originals=True,rights_confirmed=True)
+    malicious=tmp_path/'case-alias.hui'
+    with zipfile.ZipFile(original) as source,zipfile.ZipFile(malicious,'w') as target:
+        manifest=json.loads(source.read('manifest.json'))
+        for name in source.namelist():
+            if name!='manifest.json':target.writestr(name,source.read(name))
+        for name,data in [('pages/collision.png',b'first'),('pages/COLLISION.png',b'second')]:
+            target.writestr(name,data)
+            manifest['files'][name]={'sha256':hashlib.sha256(data).hexdigest(),'size':len(data)}
+        target.writestr('manifest.json',json.dumps(manifest))
+    with pytest.raises(ValueError,match='Duplicate'):import_package(malicious,tmp_path/'reader')

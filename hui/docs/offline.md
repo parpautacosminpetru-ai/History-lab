@@ -15,7 +15,7 @@ Exportul fără originale nu conține nici rastere, nici PDF-uri. Cititorul afi�
 
 ## Verificări
 
-Importul respinge căi absolute, `..`, segmente goale, căi Windows, intrări duplicate, legături simbolice, fișiere neobișnuite, versiuni incompatibile, fișiere neprevăzute în manifest și diferențe de hash. Reader verifică antetele ZIP înainte de decodare. Schema SQLite trebuie să corespundă exact schemei cunoscute; vizualizările sau trigger-ele suplimentare sunt respinse. Baza este deschisă read-only, cu `trusted_schema=OFF`. Nu se încarcă extensii SQLite.
+Importul respinge căi absolute, `..`, segmente goale, căi Windows, intrări duplicate (inclusiv coliziuni de majuscule/minuscule), legături simbolice, fișiere neobișnuite, versiuni incompatibile, fișiere neprevăzute în manifest și diferențe de hash. Reader verifică antetele ZIP înainte de decodare. Schema SQLite trebuie să corespundă exact schemei cunoscute; vizualizările sau trigger-ele suplimentare sunt respinse. Baza este deschisă read-only, cu `trusted_schema=OFF`. Nu se încarcă extensii SQLite.
 
 Limite de siguranță inițiale: Indexer maximum 2 GiB și 50.000 de fișiere per pachet; Reader maximum 256 MiB, deoarece decodarea arhivei este în memorie. Manifestul are maximum 4 MiB. Pentru colecții mai mari trebuie implementat import în flux; nu există o promisiune de suport nelimitat în acest prototip.
 

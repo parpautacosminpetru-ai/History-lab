@@ -116,15 +116,16 @@ def verify_package(package: Path, destination: Path):
         entries = archive.infolist()
         if len(entries)>MAX_FILES or sum(e.file_size for e in entries)>MAX_BYTES:
             raise ValueError('Package exceeds safety limits')
-        names = set()
+        names,portable_names = set(),set()
         for entry in entries:
             safe_path(entry.filename)
             mode = (entry.external_attr>>16)&0xffff
-            if entry.filename in names or entry.is_dir() or stat.S_ISLNK(mode) or (stat.S_IFMT(mode) not in (0,stat.S_IFREG)):
+            if entry.filename.casefold() in portable_names or entry.is_dir() or stat.S_ISLNK(mode) or (stat.S_IFMT(mode) not in (0,stat.S_IFREG)):
                 raise ValueError('Duplicate, directory or nonregular ZIP entry')
             if entry.compress_type != zipfile.ZIP_STORED or entry.flag_bits & 1:
                 raise ValueError('HUI v1 accepts unencrypted stored ZIP entries only')
             names.add(entry.filename)
+            portable_names.add(entry.filename.casefold())
         if 'manifest.json' not in names or archive.getinfo('manifest.json').file_size>4*1024**2:
             raise ValueError('Missing or oversized manifest')
         manifest = json.loads(archive.read('manifest.json'))
