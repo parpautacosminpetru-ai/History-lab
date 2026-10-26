@@ -16,6 +16,8 @@ if not had_default_test and default_test.exists() and 'MyApp' in default_test.re
     default_test.unlink()  # Generated counter test does not belong to this application.
 android='{http://schemas.android.com/apk/res/android}'
 ET.register_namespace('android','http://schemas.android.com/apk/res/android')
+tools='{http://schemas.android.com/tools}'
+ET.register_namespace('tools','http://schemas.android.com/tools')
 for file in (root/'android/app/src').rglob('AndroidManifest.xml'):
     tree=ET.parse(file)
     for permission in list(tree.getroot().findall('uses-permission')):
@@ -23,6 +25,9 @@ for file in (root/'android/app/src').rglob('AndroidManifest.xml'):
             tree.getroot().remove(permission)
     application=tree.getroot().find('application')
     if application is not None:application.set(android+'label','HUI Reader')
+    if file.parent.name=='main':
+        for name in ('android.permission.INTERNET','android.permission.ACCESS_NETWORK_STATE'):
+            ET.SubElement(tree.getroot(),'uses-permission',{android+'name':name,tools+'node':'remove'})
     tree.write(file,encoding='utf-8',xml_declaration=True)
 gradle=root/'android/app/build.gradle.kts'
 if gradle.exists():

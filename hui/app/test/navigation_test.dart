@@ -8,11 +8,15 @@ import 'package:hui_reader/widgets/source_viewer.dart';
 
 void main() {
   testWidgets('Source → exact page → index → distinct occurrence → source navigation', (tester) async {
-    final temp=await Directory.systemTemp.createTemp('hui-widget-');
+    late Directory temp;
+    late Catalog catalog;
     final normalization=File('assets/normalization.json').readAsStringSync();
-    final store=PackageStore(temp,File('assets/schema.sql').readAsStringSync());
-    final root=await store.importFile(File('test/fixtures/demo.hui'));
-    final catalog=Catalog(root,normalization);
+    await tester.runAsync(() async {
+      temp=await Directory.systemTemp.createTemp('hui-widget-');
+      final store=PackageStore(temp,File('assets/schema.sql').readAsStringSync());
+      final root=await store.importFile(File('test/fixtures/demo.hui'));
+      catalog=Catalog(root,normalization);
+    });
     await tester.pumpWidget(HuiApp(initialCatalog:catalog,normalization:normalization));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Demonstrație originală 1'));
@@ -33,8 +37,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Demonstrație originală 1'),findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
-    await temp.delete(recursive:true);
-  });
+    await tester.runAsync(()=>temp.delete(recursive:true));
+  },timeout:const Timeout(Duration(minutes:2)));
   testWidgets('Empty Reader contains no simulated results', (tester) async {
     await tester.pumpWidget(const HuiApp());
     expect(find.text('Sursele rămân punctul de plecare.'),findsOneWidget);

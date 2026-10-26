@@ -1,11 +1,14 @@
 name: HUI Windows Reader
 on:
   push:
-    branches: [main, 'feat/hui-*']
-    paths: ['hui/**', '.github/workflows/hui-*.yml']
+    branches: [main]
+    paths: ['hui/app/**', 'hui/scripts/prepare_reader.py', 'hui/scripts/check_android_permissions.py', '.github/workflows/hui-windows.yml']
   pull_request:
-    paths: ['hui/**', '.github/workflows/hui-*.yml']
+    paths: ['hui/app/**', 'hui/scripts/prepare_reader.py', 'hui/scripts/check_android_permissions.py', '.github/workflows/hui-windows.yml']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:

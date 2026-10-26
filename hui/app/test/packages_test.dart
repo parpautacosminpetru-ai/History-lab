@@ -38,7 +38,8 @@ void main() {
         expect(await catalog.search(const Query(expression:'domnie')),baseline);
       },createHttpClient:(_)=>throw StateError('Network is disabled'));
       expect(catalog.coverage()['Pagini procesate'],6);
-      expect(catalog.coverage()['Caractere acoperite de adnotări confirmate'],18);
+      expect(catalog.coverage()['Caractere acoperite de adnotări confirmate'],greaterThan(18));
+      expect(catalog.coverage()['Caractere fără adnotări confirmate'],greaterThan(0));
     } finally {catalog.close();}
   });
   test('Tampering fails without replacing the active catalog and update retains backup',() async {

@@ -1,11 +1,14 @@
 name: HUI Python and existing app
 on:
   push:
-    branches: [main, 'feat/hui-*']
-    paths: ['hui/**', '.github/workflows/hui-*.yml', 'AGENTS.md']
+    branches: [main]
+    paths: ['hui/indexer/**', 'hui/schemas/**', 'hui/app/assets/**', 'hui/scripts/generate_fixtures.py', '.github/workflows/hui-python.yml', 'AGENTS.md']
   pull_request:
-    paths: ['hui/**', '.github/workflows/hui-*.yml', 'AGENTS.md']
+    paths: ['hui/indexer/**', 'hui/schemas/**', 'hui/app/assets/**', 'hui/scripts/generate_fixtures.py', '.github/workflows/hui-python.yml', 'AGENTS.md']
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -24,7 +27,7 @@ jobs:
           node-version: '22'
       - run: python -m pip install -e "hui/indexer[test]"
       - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
+        run: command -v tesseract || (sudo apt-get update && sudo apt-get install -y tesseract-ocr)
       - run: python -m pytest hui/indexer/tests --junitxml=hui-test-results.xml -q
       - run: npm test
       - run: python -m hui_indexer.demo --output hui/build/demo

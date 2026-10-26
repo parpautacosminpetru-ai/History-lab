@@ -1,5 +1,7 @@
 # HistoryLab — Atlasul explicit
 
+**Historical Universal Index (HUI)** este implementat separat în [`hui/`](hui/README.md): Indexer Python pentru PDF/OCR, SQLite FTS5 și adnotări verificabile, plus Reader Flutter offline pentru Windows și Android. Aplicația HistoryLab descrisă mai jos rămâne disponibilă independent; formatele de date nu sunt comasate automat.
+
 **Prototip Android gratuit, offline, cu fotografie a paginii, OCR local pentru transcriere și indexare semantică integral manuală, într-un singur spațiu de lucru (timp + geografie).**
 
 Acest depozit înlocuiește proiectul Android anterior. Conținutul vechi nu mai face parte din ramura `main`, dar **istoricul Git este păstrat**, astfel încât versiunile anterioare să poată fi recuperate.

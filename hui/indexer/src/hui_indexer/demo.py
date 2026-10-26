@@ -58,7 +58,7 @@ def make_pdf(path: Path, pages: list[list[str]]):
 def generate(output: Path):
     from .db import connect
     from .ingestion import import_pdf
-    from .semantics import create_node,annotate,review,publish
+    from .semantics import create_node,annotate,review,publish,relation
     from .packages import export_package
     output = Path(output)
     workspace = output/'workspace'
@@ -74,6 +74,25 @@ def generate(output: Path):
             start = segment['original_text'].index('domnie')
             occurrence = annotate(db,canonical,[{'segment_id':segment['id'],'start':start,'end':start+6}],language=language)
             decisions.append({'type':'occurrence','id':occurrence,'status':'human_confirmed'})
+            if language=='ro':
+                node_x=create_node(db,'X','concept','ro',disambiguation='Subiect fictiv de test')
+                node_y=create_node(db,'Y','concept','ro',disambiguation='Obiect fictiv de test')
+                decisions.extend([{'type':'node','id':node_x,'status':'human_confirmed'},
+                                  {'type':'node','id':node_y,'status':'human_confirmed'}])
+                for sentence,negated,modality,attribution in [
+                    ('X nu a provocat Y.',True,'assertive',''),
+                    ('Autorul presupune că X ar fi provocat Y.',False,'conditional','Autorul presupune')]:
+                    start=segment['original_text'].index(sentence)
+                    endpoints=[]
+                    for label,node in [('X',node_x),('Y',node_y)]:
+                        position=start+sentence.index(label)
+                        endpoint=annotate(db,node,[{'segment_id':segment['id'],'start':position,'end':position+1}])
+                        endpoints.append(endpoint)
+                        decisions.append({'type':'occurrence','id':endpoint,'status':'human_confirmed'})
+                    rid=relation(db,endpoints[0],'causality',endpoints[1],
+                                 [{'segment_id':segment['id'],'start':start,'end':start+len(sentence)}],
+                                 connector='provocat',negated=negated,modality=modality,attribution=attribution)
+                    decisions.append({'type':'relation','id':rid,'status':'human_confirmed'})
         # Synthetic fixture approvals describe test data, not a historical verification.
         review(db,decisions,reviewer='Generator de fixture: validare sintetică')
         publish(db,'Documente demonstrative originale; nu conțin date istorice')
