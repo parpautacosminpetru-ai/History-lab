@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:hui_reader/database/catalog.dart';
 import 'package:hui_reader/main.dart';
 import 'package:hui_reader/services/packages.dart';
@@ -30,5 +31,11 @@ void main() {
     await tester.tap(find.text('PDF 2'));
     await tester.pumpAndSettle();
     expect(find.text('Pagina PDF 2'),findsOneWidget);
+    await tester.tap(find.text('Deschide PDF-ul original'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PdfViewer),findsOneWidget);
+    final viewer=tester.widget<PdfViewer>(find.byType(PdfViewer));
+    expect(viewer.controller!.isReady,true);
+    expect(viewer.controller!.pageNumber,2);
   });
 }
