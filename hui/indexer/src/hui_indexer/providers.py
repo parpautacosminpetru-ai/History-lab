@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import json
 import os
 from urllib.parse import urlparse
-from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
 
 from .db import transaction
 from .semantics import create_node, annotate, relation
@@ -69,7 +69,7 @@ class OpenAICompatibleProvider(ProposalProvider):
             if not key:
                 raise ValueError('Set the API key environment variable explicitly')
             headers['Authorization'] = 'Bearer '+key
-        opener = build_opener(_NoRedirect())
+        opener = build_opener(_NoRedirect(),ProxyHandler() if self.external else ProxyHandler({}))
         with opener.open(Request(self.endpoint,json.dumps(body).encode(),headers),timeout=180) as response:
             data = response.read(2*1024**2+1)
         if len(data)>2*1024**2:
@@ -94,6 +94,8 @@ def propose_segment(db, segment_id: str, provider: ProposalProvider, *,
         for proposal in payload['nodes']:
             if proposal['key'] in nodes:
                 raise ValueError('Duplicate proposal key')
+            if not isinstance(proposal.get('quote'),str) or proposal['label'] not in proposal['quote']:
+                raise ValueError('AI labels must be literal expressions from their evidence')
             node_id = create_node(db,proposal['label'],proposal['type'])
             occurrence_id = annotate(db,node_id,[{'segment_id':segment_id,'start':proposal['start'],'end':proposal['end']}],
                                      quote=proposal['quote'],method='ai_proposal',uncertainty=proposal.get('uncertainty',''))

@@ -34,6 +34,25 @@ def make_pdf(path: Path, pages: list[list[str]]):
             y -= 30
         document.showPage()
     document.save()
+    if any(ord(char)>0xffff for lines in pages for line in lines for char in line):
+        # ReportLab 4's five-digit ToUnicode entries are not valid UTF-16BE.
+        # Repair only our synthetic fixture producer, never an imported original.
+        import re
+        from pypdf import PdfReader,PdfWriter
+        from pypdf.generic import NameObject,DecodedStreamObject
+        reader=PdfReader(path)
+        for page in reader.pages:
+            for reference in page['/Resources']['/Font'].values():
+                font_object=reference.get_object()
+                if '/ToUnicode' not in font_object:continue
+                data=font_object['/ToUnicode'].get_data()
+                fixed=re.sub(rb'<([0-9A-Fa-f]{5,6})>',lambda m:b'<'+chr(int(m[1],16)).encode('utf-16-be').hex().upper().encode()+b'>',data)
+                stream=DecodedStreamObject();stream.set_data(fixed)
+                font_object[NameObject('/ToUnicode')]=stream
+        writer=PdfWriter();writer.append_pages_from_reader(reader)
+        temporary=path.with_suffix('.fixed.pdf')
+        with temporary.open('wb') as target:writer.write(target)
+        temporary.replace(path)
 
 
 def generate(output: Path):

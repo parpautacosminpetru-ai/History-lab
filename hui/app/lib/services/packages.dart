@@ -38,7 +38,7 @@ Set<String> checkZip(Uint8List bytes) {
     if (offset+46>centralEnd || u32(offset)!=0x02014b50) throw const FormatException('Intrare ZIP invalidă');
     final flags=u16(offset+8), method=u16(offset+10), size=u32(offset+24);
     final nameLength=u16(offset+28), extra=u16(offset+30), comment=u16(offset+32);
-    if (offset+46+nameLength+extra+comment>centralEnd || method!=0 || flags & 9 != 0 || u32(offset+20)!=size) {
+    if (offset+46+nameLength+extra+comment>centralEnd || method!=0 || (flags & 9) != 0 || u32(offset+20)!=size) {
       throw const FormatException('HUI v1 cere fișiere ZIP stored, fără criptare');
     }
     final name=safePackagePath(utf8.decode(bytes.sublist(offset+46,offset+46+nameLength)));
