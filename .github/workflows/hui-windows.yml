@@ -1,0 +1,36 @@
+name: HUI Windows Reader
+on:
+  push:
+    branches: [main]
+    paths: ['hui/app/**', 'hui/scripts/prepare_reader.py', 'hui/scripts/check_android_permissions.py', '.github/workflows/hui-windows.yml']
+  pull_request:
+    paths: ['hui/app/**', 'hui/scripts/prepare_reader.py', 'hui/scripts/check_android_permissions.py', '.github/workflows/hui-windows.yml']
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.5'
+          cache: true
+      - run: python hui/scripts/prepare_reader.py
+      - run: flutter pub get
+        working-directory: hui/app
+      - run: flutter test --reporter expanded
+        working-directory: hui/app
+      - run: flutter build windows --release
+        working-directory: hui/app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HUI-Reader-Windows
+          path: hui/app/build/windows/x64/runner/Release/

@@ -1,0 +1,9 @@
+hui/**/*.sql text eol=lf
+hui/**/*.dart text eol=lf
+hui/**/*.json text eol=lf
+hui/**/*.py text eol=lf
+hui/**/*.md text eol=lf
+hui/**/*.yaml text eol=lf
+.github/workflows/hui-*.yml text eol=lf
+hui/**/*.hui binary
+hui/**/*.ttf binary

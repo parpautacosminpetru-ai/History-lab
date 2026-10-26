@@ -1,0 +1,99 @@
+{
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "sqlite": "3.53.1",
+  "synthetic_segments": 10000,
+  "matching_segments": 1000,
+  "iterations": 30,
+  "database_size_bytes": 3833856,
+  "synthetic_load_seconds": 0.4181,
+  "query_median_ms": 2.5874,
+  "query_p95_ms": 3.0767,
+  "query_plan": [
+    [
+      17,
+      0,
+      91,
+      "SEARCH t USING INTEGER PRIMARY KEY (rowid=?)"
+    ],
+    [
+      21,
+      0,
+      0,
+      "LIST SUBQUERY 2"
+    ],
+    [
+      28,
+      21,
+      156,
+      "SCAN SegmentFTS VIRTUAL TABLE INDEX 0:M1"
+    ],
+    [
+      33,
+      21,
+      45,
+      "SEARCH ts USING INTEGER PRIMARY KEY (rowid=?)"
+    ],
+    [
+      36,
+      21,
+      46,
+      "SEARCH pp USING INDEX sqlite_autoindex_Pages_1 (id=?)"
+    ],
+    [
+      41,
+      21,
+      44,
+      "SEARCH ee USING COVERING INDEX sqlite_autoindex_SourceEditions_1 (id=?)"
+    ],
+    [
+      55,
+      0,
+      46,
+      "SEARCH p USING INDEX sqlite_autoindex_Pages_1 (id=?)"
+    ],
+    [
+      60,
+      0,
+      46,
+      "SEARCH e USING INDEX sqlite_autoindex_SourceEditions_1 (id=?)"
+    ],
+    [
+      67,
+      0,
+      46,
+      "SEARCH s USING INDEX sqlite_autoindex_Sources_1 (id=?)"
+    ],
+    [
+      72,
+      0,
+      46,
+      "SEARCH ds USING INDEX sqlite_autoindex_DocumentStructures_1 (id=?) LEFT-JOIN"
+    ],
+    [
+      108,
+      0,
+      0,
+      "CORRELATED SCALAR SUBQUERY 1"
+    ],
+    [
+      118,
+      108,
+      63,
+      "SEARCH sa USING INDEX sqlite_autoindex_SourceAuthors_1 (source_id=?)"
+    ],
+    [
+      124,
+      108,
+      47,
+      "SEARCH a USING INDEX sqlite_autoindex_Authors_1 (id=?)"
+    ],
+    [
+      148,
+      0,
+      0,
+      "USE TEMP B-TREE FOR ORDER BY"
+    ]
+  ],
+  "scope": "SQLite textual page-segment search only; no OCR, UI or collection-scale guarantee"
+}

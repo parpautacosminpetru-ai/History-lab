@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hui-indexer"
+version = "0.1.0"
+description = "Local document indexer and deterministic research engine"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["pypdfium2==4.30.0", "Pillow>=10.4,<13"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10", "reportlab>=4.2,<5", "pypdf>=5,<7"]
+
+[project.scripts]
+hui = "hui_indexer.cli:main"
+
+[tool.setuptools.package-data]
+hui_indexer = ["migrations/*.sql", "assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

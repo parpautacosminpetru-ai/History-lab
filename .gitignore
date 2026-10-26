@@ -7,3 +7,22 @@ local.properties
 .DS_Store
 node_modules/
 *.apk
+
+# HUI: researcher data stays local.
+**/__pycache__/
+**/*.egg-info/
+.pytest_cache/
+.venv/
+hui-workspace/
+*.sqlite
+*.sqlite-journal
+*.hui
+!hui/app/test/fixtures/demo.hui
+hui/app/.dart_tool/
+hui/app/build/
+hui/app/.flutter-plugins*
+hui/app/android/
+hui/app/windows/
+hui/app/.metadata
+hui/app/hui_reader.iml
+hui/build/

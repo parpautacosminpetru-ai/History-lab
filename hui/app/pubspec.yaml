@@ -1,0 +1,28 @@
+name: hui_reader
+description: Historical Universal Index — consultarea offline a surselor
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  sqlite3: 2.9.4
+  sqlite3_flutter_libs: 0.5.41
+  pdfrx: 1.3.5
+  file_picker: 8.3.7
+  path_provider: 2.1.5
+  path: 1.9.1
+  archive: 4.0.7
+  crypto: 3.0.6
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/schema.sql
+    - assets/normalization.json
+    - test/fixtures/demo.hui
