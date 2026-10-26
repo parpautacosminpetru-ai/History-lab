@@ -1,0 +1,299 @@
+[
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "index",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "absent OR domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "domnie AND NOT absent",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "\"CAPITOLUL I\"",
+      "mode": "text",
+      "scope": "source",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "2aa981aa-8722-5ca8-bb21-ae61d8b72130",
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f"
+    ]
+  },
+  {
+    "query": {
+      "expression": "X AND Y",
+      "mode": "linked",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": []
+  },
+  {
+    "query": {
+      "expression": "X AND Y",
+      "mode": "linked",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": true,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": []
+  },
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": "HUI — fixture original",
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": "concept",
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "32bb788f-2cf2-5cb2-8f93-c77e9ebcf02f",
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4",
+      "9af50a69-a63f-5e62-b93c-af91906f5041"
+    ]
+  },
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 1,
+      "offset": 1
+    },
+    "segment_ids": [
+      "7c0198c7-8b83-5645-8dbf-88fc75cb36e4"
+    ]
+  },
+  {
+    "query": {
+      "expression": "domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": 1000,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": []
+  },
+  {
+    "query": {
+      "expression": "NOT domnie",
+      "mode": "text",
+      "scope": "passage",
+      "source_id": null,
+      "edition_id": null,
+      "author": null,
+      "context_id": null,
+      "node_type": null,
+      "relation_type": null,
+      "statuses": [
+        "human_confirmed"
+      ],
+      "year_start": null,
+      "year_end": null,
+      "include_negated": false,
+      "limit": 50,
+      "offset": 0
+    },
+    "segment_ids": [
+      "2aa981aa-8722-5ca8-bb21-ae61d8b72130",
+      "fd4f4a5b-b2ff-5c59-a6ea-5126a2583737",
+      "76c639dd-c695-549f-bd5b-7c4494904e74"
+    ]
+  }
+]
